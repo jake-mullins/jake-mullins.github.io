@@ -1,3 +1,9 @@
+---
+layout: post
+title: Week 3 - BYUCTF Partial Writeup
+tags: [year-of-hacking, CTF, writeup]
+---
+
 This year, I participated in BYU's CTF. I finished a big chunk of the challenges, but I'm electing to only publish the writeups of 2 of the easier challenges, as most of these challenges will be used in the BYU's public CTF in May this year. I'm now running the CTF team here, and though I wasn't involved in putting on this particular event, I'm proud of the noticeable uptick in quality from last year, and I'm looking forward to helping apply these lessons in the future. 
 
 [Dallin Kaufman](https://www.linkedin.com/in/kaufmand12/) and [Macen Bird](https://www.linkedin.com/in/macen-bird/) had the really interesting idea of creating a "Beginner" category, where you're allowed to work with anyone, including your competitors to learn the ropes of some typical CTF challenges. This addresses the biggest and most common gripe with CTFs: the Himalayan learning slope. I hope to see this kind of innovation in the future.
