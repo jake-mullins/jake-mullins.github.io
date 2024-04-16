@@ -2,7 +2,7 @@ title: Jake Mullins
 author: Jake Mullins
 url: https://jake-mullins.github.io # root address of the site
 description: > # description of the site (multiple lines allowed)
-  This is my site where I publish writeups on CTF problems I've done and projects I'm working on.
+  This is my site where I publish writeups on CTF problems and projects I'm working on.
 
 permalink: /:slug
 
