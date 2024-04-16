@@ -5,22 +5,21 @@ navbar_entries:
   - title: blog
     url: blog
 
-  - title: experience
-    url: experience
+  # - title: experience
+    # url: experience
 
   - title: connect
     url: connect
 
 project_entries:
-  - title: CTF Challenges
-    url: projects/challenges
-    desc: Challenges I write for a variety of CTFs
-    highlight: WIP
+  - title: China Censorship
+    url: https://jake-mullins.net/china/
+    desc: Check if a website is censored in China
 
-  - title: Homelab
-    url: projects/homelab
-    desc: My personal homelab
-    highlight: WIP
+  # - title: Homelab
+  #   url: projects/homelab
+  #   desc: My personal homelab
+  #   highlight: WIP
 
 old_project_entries:
   - title: placeholder_title
@@ -30,7 +29,7 @@ old_project_entries:
 
 footer_entries:
   - title: source
-    url: https://github.com/deltabluejay/deltabluejay.github.io/
+    url: https://github.com/jake-mullins/jake-mullins.github.io/
 
   - title: feed
     url: feed.xml
