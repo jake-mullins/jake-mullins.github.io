@@ -1,3 +1,9 @@
+---
+layout: post
+title: Week 4 - CTF Madness
+tags: [year-of-hacking, CTF, writeup]
+---
+
 As my junior year wraps up, I have a bit of time after finals weeks before my summer job(s) roles start, so I did a list of mostly binary-exploitation related CTFs:
 - 5 challenges off of [pwnable.kr](pwnable.kr), a wargame "powered/supported by" Georgia Tech in Atlanta and KyungHee University in Seoul.
 - 1 challenge from [PicoCTF](https://picoctf.org/), Carnegie Mellon's CTF training platform
