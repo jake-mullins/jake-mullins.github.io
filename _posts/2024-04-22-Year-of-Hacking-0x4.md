@@ -84,6 +84,7 @@ int main(int argc, char* argv[], char** envp){
 ```
 
 Last time, we solved the challenge by using the absolute path for executing binaries, but that won't work because the `/` character is blocked. Because the filter is only applied once, I bet we can use bash shenanigans to create the `/` character. I created a small program to mimic portions of the target environment:
+
 ```C
 #include <stdio.h>
 #include <stdlib.h>
