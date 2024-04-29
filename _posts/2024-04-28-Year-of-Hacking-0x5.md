@@ -3,7 +3,7 @@ layout: post
 title: Week 5 - Dunemaxxing
 tags: [year-of-hacking, CTF, writeup]
 ---
-I participated in University of Maryland's UMDCTF. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models.
+This week, I participated in University of Maryland's UMDCTF with BYU Cyberia. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models.
 
 ## Attack of the Worm
 ```
