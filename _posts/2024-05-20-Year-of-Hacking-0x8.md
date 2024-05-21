@@ -17,32 +17,22 @@ Examining the capture in Wireshark, we can see there are a lot of outbound DNS r
 ```python
 from scapy.all import rdpcap
   
-# Path to the PCAP file
 pcap_file = "exfiltrated_seg.pcap"
   
-# Read the PCAP file
 packets = rdpcap(pcap_file)
   
 flag = ""
   
-# Iterate over each packet
 for packet in packets:
-    # Check if the packet is a DNS packet
     if packet.haslayer('DNS'):
-        # Check if the packet is a DNS query
         if packet['DNS'].qr == 0:  # qr=0 means it's a query
             if packet['IP'].src == '192.168.40.73':
-                # Check if the DNS query is for a subdomain of data.com
                 query_name = str(packet['DNS'].qd.qname.decode('utf-8'))
                 # print(query_name)
 
                 if 'exfiltrated.com.' in query_name:
                     parts = query_name.split(".")
                     flag += parts[0]
-                    # Access other packet fields as needed
-                    # For example, to qaccess the source and destination IP addresses:
-                    # print("Source IP:", packet['IP'].src)
-                    # print("Destination IP:", packet['IP'].dst)
   
 print(flag)
 ```
