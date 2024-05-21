@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 6 - Machine Learning Crash Course
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 6 - Machine Learning Crash Course" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Inspired by the AI challenge I solved last week for UMDCTF, I decided to try my hand at Machine Learning. I took a Linear Algebra course a few years back, and I’ve managed to keep my intuition about matrix-based math operations, which is a decent foundation to start learning about this field. I also remember the broad strokes of Neural Networks covered in these videos that I watched in high school: Sebastian Lague Code Bullet 3Blue1Brown" />
+<meta property="og:description" content="Inspired by the AI challenge I solved last week for UMDCTF, I decided to try my hand at Machine Learning. I took a Linear Algebra course a few years back, and I’ve managed to keep my intuition about matrix-based math operations, which is a decent foundation to start learning about this field. I also remember the broad strokes of Neural Networks covered in these videos that I watched in high school: Sebastian Lague Code Bullet 3Blue1Brown" />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0x6" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0x6" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-06T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 6 - Machine Learning Crash Course" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-05-06T00:00:00-06:00","datePublished":"2024-05-06T00:00:00-06:00","description":"Inspired by the AI challenge I solved last week for UMDCTF, I decided to try my hand at Machine Learning. I took a Linear Algebra course a few years back, and I’ve managed to keep my intuition about matrix-based math operations, which is a decent foundation to start learning about this field. I also remember the broad strokes of Neural Networks covered in these videos that I watched in high school: Sebastian Lague Code Bullet 3Blue1Brown","headline":"Week 6 - Machine Learning Crash Course","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0x6"},"url":"http://localhost:4000/year-of-hacking-0x6"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 6 - Machine Learning Crash Course</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">May 2024</span>
+  
+
+
+  
+  
+  (1406 Words, 
+  8 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">CTF</span>
+    
+    <span class="tag">writeup</span>
+    
+  </div>
+
+
+<p>Inspired by the AI challenge I solved last week for UMDCTF, I decided to try my hand at Machine Learning. I took a Linear Algebra course a few years back, and I’ve managed to keep my intuition about matrix-based math operations, which is a decent foundation to start learning about this field. I also remember the broad strokes of Neural Networks covered in these videos that I watched in high school:</p>
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=hfMk-kjRv4c&amp;ab_channel=SebastianLague">Sebastian Lague</a></li>
+  <li><a href="https://www.youtube.com/watch?v=WSW-5m8lRMs&amp;ab_channel=CodeBullet">Code Bullet</a></li>
+  <li><a href="https://www.youtube.com/watch?v=aircAruvnKk">3Blue1Brown</a></li>
+</ul>
+
+<p>I am by no means an expert in this field, as I am on day 9 of learning about ML, so take any of the information with a sizeable grain of salt.</p>
+
+<p>Machine Learning, to my understanding, is a buzzword for any of a number of algorithms that continuously improve the longer it is run. Some mimic natural phenomena like evolution or neurons, but that’s not necessary. Machine learning algorithms seek to learn from data, and then use the learned state of the algorithm to make inferences about data that was not included in the original data set.</p>
+
+<p>Let’s not  worry about the specifics of the Machine Learning algorithm for now, and focus on the kinds of problems it can solve. Say you are a tabletop gaming store that has a wide variety of Warhammer 40k miniatures, each with a signature color scheme and silhouette, or perhaps a <a href="https://www.newyorker.com/tech/annals-of-technology/the-pastry-ai-that-learned-to-fight-cancer">Japanese Bakery with a couple hundred kinds of pastries</a>. You have the option of training up a 17 year old to run checkout so they can reliably tell the difference between a <a href="https://www.warhammer.com/app/resources/catalog/product/threeSixty/99120102133_TSScarabOccultRepackageSPIN2360/01.jpg?fm=webp&amp;w=670">Scarab Occult Terminator</a> and a <a href="https://www.warhammer.com/app/resources/catalog/product/threeSixty/99120102063_ThousandSonsRubricMarines1360/01-01.jpg?fm=webp&amp;w=670">Rubric Marine</a> and accepting loss when the 17 year old screws up, or developing a system that will automatically differentiate between hundreds of different varieties of miniatures.</p>
+
+<p><img src="assets/images/blog/week6/ThousandSons.png" alt="assets/images/blog/week6/ThousandSons.png" /></p>
+
+<p>In more abstract terms, this means we want to take an input, in this context, probably a video feed, run it through some algorithm, then return one of a known amount of options:
+<img src="assets/images/blog/week6/RubricMarineDemo.png" alt="assets/images/blog/week6/RubricMarineDemo.png" /></p>
+
+<p>There are a slew of reasons why hardcoding this logic is impractical, chief among them are:</p>
+<ul>
+  <li>Orientation of the product</li>
+  <li>Lighting</li>
+  <li>Paint scheme</li>
+  <li>Altered silhouette from damage</li>
+  <li>Skin color of the person holding the miniature</li>
+</ul>
+
+<p>And dozens of other confounding factors. Plus hardcoding this logic would probably require taking thousands of photos with different conditions for each product, and comparing the current input with any of them. That would be both impractical and slow. Machine Learning algorithms were developed to address these kinds of issues, where the program needs to infer some kind of attribute about the input when the entire space of inputs (mathy talk for all possible inputs) is too large to precompute.</p>
+
+<p>I’ll assume you know the some of the basics of Machine Learning from now on, including the following list of terms: model, neuron, layer, and gradient descent/ascent. In ML-land, there’s two important times of a models life. The training, and the inference. A brief lifecycle of an ML goes like this:</p>
+<ol>
+  <li>A model is initialized with random weights and biases.</li>
+  <li>Data is fed through the model</li>
+  <li>The algorithm compares the result from the model with the true value of the input. The difference between these two values is called the <code class="language-plaintext highlighter-rouge">loss</code>.</li>
+  <li>The algorithm does some funky calculus to calculate the gradient, then steps down/up the gradient by a set amount, which alters the current weights of the parameters.</li>
+  <li>Steps 2-4 are rerun with different data until the desired performance is achieved.</li>
+</ol>
+
+<p>This graduates the model from the training stage to the inference stage. Rather than continuously altering its parameters, a model is put into evaluation mode, where it will only return the output given an input. This makes the training stage much more computationally intensive than the inference stage. For example, the new <a href="https://ai.meta.com/blog/meta-llama-3/">Meta Llama 3 LLM</a> can be run in inference mode locally, even though it took something like 1.3 Million GPU hours to train.</p>
+
+<p>Let’s see some implementation. I started out doing image recognition by following <a href="https://github.com/bentrevett/pytorch-image-classification">this</a> github repo by <a href="https://bentrevett.com/">Ben Trevett</a>. The first page is using a Multi-Layer Perceptron to recognize handwritten digits from the MNIST dataset. A Mult-Layer Perceptron is a group of fully connected layers, which is often illustrated like this:</p>
+
+<p><img src="assets/images/blog/week6/MLP.png" alt="assets/images/blog/week6/MLP.png" /></p>
+
+<p>I haven’t done anything with ML that’s worth showing off at the moment, but I’m working on a few things that will at least be interesting when they’re finished. For now, I’m going to include my roadmap of how to build the script detailed <a href="https://github.com/bentrevett/pytorch-image-classification/blob/master/1_mlp.ipynb">here</a>, as the author <a href="https://bentrevett.com/">Ben Trevett</a> definitely knows his stuff, and understanding everything going on in the script will provide a solid foundation to base future learning in ML upon.</p>
+
+<h2 id="general-workflow">General workflow</h2>
+<ol>
+  <li>Import pytorch</li>
+  <li>Set static seed for experimental consistency</li>
+  <li>Load dataset using <code class="language-plaintext highlighter-rouge">datasets.MNIST</code> class</li>
+  <li>Create training transform with random rotation, crop, then turn to tensor and normalize to mean = 1, stdev = 0.5</li>
+  <li>Create testing transform that turns to tensor, normalize to mean = 1, stdev = 0.5</li>
+  <li>Load training data, applying training transforms</li>
+  <li>Load testing data, applying testing transforms</li>
+  <li>Split up training data into training data and validation data. 90% training data, 10% validation data. Validation data must be taken from the training data, not the testing data.</li>
+  <li>Build iterators for training, validation, and testing data using <code class="language-plaintext highlighter-rouge">DataLoader</code> class.</li>
+  <li>Define the Neural Network. Inherits from <code class="language-plaintext highlighter-rouge">nn.Module</code> class, has custom <code class="language-plaintext highlighter-rouge">forward(self, x: torch.Tensor)</code> function which returns <code class="language-plaintext highlighter-rouge">y_pred</code>. <code class="language-plaintext highlighter-rouge">__init__</code> defines the layers:</li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MLP</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="nb">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="bp">self</span><span class="p">.</span><span class="n">input_fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="bp">self</span><span class="p">.</span><span class="n">hidden_fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">250</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="bp">self</span><span class="p">.</span><span class="n">output_fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+
+<span class="err"> </span> <span class="err"> </span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="p">.</span><span class="n">Tensor</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">batch_size</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+		<span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">h_1</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">input_fc</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">h_2</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">hidden_fc</span><span class="p">(</span><span class="n">h_1</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">output_fc</span><span class="p">(</span><span class="n">h_2</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">h_2</span>
+</code></pre></div></div>
+
+<ol>
+  <li>Define an optimizer. This used the <code class="language-plaintext highlighter-rouge">optim.Adam</code> class. This</li>
+  <li>Define a criterion. This used <code class="language-plaintext highlighter-rouge">nn.CrossEntropyLoss()</code> class.</li>
+  <li>Create a <code class="language-plaintext highlighter-rouge">train</code> function with signature <code class="language-plaintext highlighter-rouge">train(model, iterator, optimizer, criterion)</code>. This function:
+    1. Iterates through the contents of the iterator, which includes the input and the correct output.
+    2. Zero out the gradients of the optimizer. Basically set it to a blank slate.
+    3. Run the input through the model and save the prediction
+    4. Pass the prediction and the correct output through the criterion, saved as <code class="language-plaintext highlighter-rouge">loss</code>.
+    5. Update the gradient using <code class="language-plaintext highlighter-rouge">loss.backward()</code>.
+    6. Step down the gradient using <code class="language-plaintext highlighter-rouge">optimizer.step()</code></li>
+  <li>Create a <code class="language-plaintext highlighter-rouge">evaluate</code> with signature <code class="language-plaintext highlighter-rouge">evaluate(model, iterator, criterion)</code>. This function:
+    <ol>
+      <li>Set model to evaluation (not training) mode using <code class="language-plaintext highlighter-rouge">mode.eval()</code> and set not gradient using <code class="language-plaintext highlighter-rouge">torch.no_grad</code></li>
+      <li>Iterates through the contents of the iterator, which includes the input and the correct output.</li>
+      <li>Run the input through the model and save the prediction.</li>
+      <li>Calculate the loss using the criterion.</li>
+    </ol>
+  </li>
+  <li>Define the amount of times you want the net to run through the datasets defined as <code class="language-plaintext highlighter-rouge">EPOCHS</code></li>
+  <li>If the loss is less than the best previous loss, save the model. using <code class="language-plaintext highlighter-rouge">model.state_dict()</code></li>
+  <li>Now that the model has been trained, we can do some fun visualization.</li>
+</ol>
+
+<p>We can do a confusion matrix with <code class="language-plaintext highlighter-rouge">metrics.confusion_matrix</code></p>
+
+<p><img src="assets/images/blog/week6/Confusion.png" alt="assets/images/blog/week6/Confusion.png" /></p>
+
+<p>We can do principal component analysis to flatten the data to 2 dimensions.</p>
+
+<p><img src="assets/images/blog/week6/t-SNE.png" alt="assets/images/blog/week6/t-SNE.png" /></p>
+
+<p>We can also do t-SNE (t-distributed stochastic neighbor embedding). This algorithm is “better” than PCA, thought it <a href="https://distill.pub/2016/misread-tsne/">takes a little bit of reading to effectively use</a>. It’s also much slower. Both PCA and t-SNE can be used to see the clustering of data groups.</p>
+
+<p><img src="assets/images/blog/week6/PCA.png" alt="assets/images/blog/week6/PCA.png" /></p>
+
+<p>We can also try and generate a perfect digit, which shows us that the model can be improved. Because the image is all noise, we can see the model is overclassifying.</p>
+
+<p><img src="assets/images/blog/week6/Perfect3.png" alt="assets/images/blog/week6/Perfect3.png" /></p>
+
+<p>We can look at the weights that the first layer (not the input layer) is looking at, revealing some ghosts of what that particular neuron is looking for:</p>
+
+<p><img src="assets/images/blog/week6/NeuronWeights.png" alt="assets/images/blog/week6/NeuronWeights.png" /></p>
+
+<p>More interesting stuff is on the way, I just have to slog through the grunt work before I get there.</p>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>

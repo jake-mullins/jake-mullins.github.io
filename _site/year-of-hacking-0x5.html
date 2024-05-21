@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 5 - Dunemaxxing
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 5 - Dunemaxxing" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This week, I participated in University of Maryland’s UMDCTF with BYU Cyberia. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models." />
+<meta property="og:description" content="This week, I participated in University of Maryland’s UMDCTF with BYU Cyberia. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models." />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0x5" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0x5" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-04-28T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 5 - Dunemaxxing" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-04-28T00:00:00-06:00","datePublished":"2024-04-28T00:00:00-06:00","description":"This week, I participated in University of Maryland’s UMDCTF with BYU Cyberia. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models.","headline":"Week 5 - Dunemaxxing","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0x5"},"url":"http://localhost:4000/year-of-hacking-0x5"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 5 - Dunemaxxing</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">April 2024</span>
+  
+
+
+  
+  
+  (7270 Words, 
+  41 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">CTF</span>
+    
+    <span class="tag">writeup</span>
+    
+  </div>
+
+
+<p>This week, I participated in University of Maryland’s UMDCTF with BYU Cyberia. I only ended up solving one challenge, but it introduced to me a whole new category of CTF challenges: attacking machine learning models.</p>
+
+<h2 id="attack-of-the-worm">Attack of the Worm</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>the fremen are trying to sabotage the spice harvest and they need your help! spice harvesters have worm image recognition technology to know when to avoid a worm attack. luckily for you, a hacker genius got access to the pixels of the worm image, but you can only change up to 30 pixels of it. can you help the fremen destroy a spice harvester?
+NOTE: the model is the same as `the worm strikes back`
+`nc challs.umdctf.io 31774`
+</code></pre></div></div>
+<p>I’ve been a fan of dune since I was 14, so I’ll always make sure to help the Fremen when I can. We are given three files:</p>
+<ul>
+  <li>model.pt</li>
+  <li>server.py</li>
+  <li>worm.png</li>
+</ul>
+
+<p>I only had a theoretical understanding of AI/ML, mostly gleaned from Sebastian Lague’s video entitled <a href="https://www.youtube.com/watch?v=hfMk-kjRv4c&amp;t=1395s&amp;ab_channel=SebastianLague">“How to Create a Neural Network (and Train it to Identify Doodles)</a> and <a href="https://www.youtube.com/watch?v=aircAruvnKk&amp;ab_channel=3Blue1Brown">“But What is a Neural Network”</a> from 3Blue1Brown, 2 channels who are guilty of getting me into Computer Science back in high school.</p>
+
+<p><code class="language-plaintext highlighter-rouge">model.pt</code>: It looks like a <code class="language-plaintext highlighter-rouge">.pt</code> file is generated by <code class="language-plaintext highlighter-rouge">pytorch</code>, which is an ML Python library. I’d imagine this contains some kind of model.</p>
+
+<p><code class="language-plaintext highlighter-rouge">worm.png</code>: A 224x224 pixel PNG file:
+<img src="assets/files/blog/attack-of-the-worm/worm.png" alt="assets/files/blog/attack-of-the-worm/worm.png" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">server.py</code>: A lot of interesting things happen here, so let’s break it down:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/local/bin/python
+</span><span class="kn">import</span> <span class="nn">sys</span>
+  
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet18</span>
+  
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet18</span><span class="p">()</span>
+<span class="n">model</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">fc</span><span class="p">.</span><span class="n">in_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">'model.pt'</span><span class="p">))</span>
+  
+<span class="n">original</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">(</span><span class="n">Image</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"worm.png"</span><span class="p">))</span>
+<span class="n">modified</span> <span class="o">=</span> <span class="n">original</span><span class="p">.</span><span class="n">copy</span><span class="p">()</span>
+  
+<span class="n">inp</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">f"Enter a list of pixels to change, in the format 'x,y,r,g,b;x,y,r,g,b;...':</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">pixels</span> <span class="o">=</span> <span class="n">inp</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">";"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">30</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">pixel</span> <span class="ow">in</span> <span class="n">pixels</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pixel</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">","</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
+<span class="k">except</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"Too many pixel changes."</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  
+<span class="c1"># Reorder by channel
+</span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">modified</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+  
+<span class="k">if</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"that's clearly a worm buddy"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"flag.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"LISAN AL GAIB"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="n">read</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>Starting with the first few lines:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="n">resnet18</span><span class="p">()</span>
+<span class="n">model</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">fc</span><span class="p">.</span><span class="n">in_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">'model.pt'</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>It looks like it creates a <code class="language-plaintext highlighter-rouge">resnet18</code> object called <code class="language-plaintext highlighter-rouge">model</code>, then loads the actual state of the model from <code class="language-plaintext highlighter-rouge">model.pt</code>. The next bit of code is a little bit more complex:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">original</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">(</span><span class="n">Image</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"worm.png"</span><span class="p">))</span>
+<span class="n">modified</span> <span class="o">=</span> <span class="n">original</span><span class="p">.</span><span class="n">copy</span><span class="p">()</span>
+  
+<span class="n">inp</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">f"Enter a list of pixels to change, in the format 'x,y,r,g,b;x,y,r,g,b;...':</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">pixels</span> <span class="o">=</span> <span class="n">inp</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">";"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">30</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">pixel</span> <span class="ow">in</span> <span class="n">pixels</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pixel</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">","</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
+<span class="k">except</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"Too many pixel changes."</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>It takes the file <code class="language-plaintext highlighter-rouge">worm.png</code> and turns it into a numpy array, then creates a copy called <code class="language-plaintext highlighter-rouge">modified</code>. It then takes a string with format <code class="language-plaintext highlighter-rouge">x,y,r,g,b;x,y...</code> for 30 pixels worth of data. It will then set those 30 pixels to whatever color value we assign. The next chunk is where we actually use the pretrained model given to us:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">modified</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">y</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"that's clearly a worm buddy"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">sys</span><span class="p">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"flag.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">"LISAN AL GAIB"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="n">read</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>After some reading, it looks like the script creates a tensor, a multidimensional array, called <code class="language-plaintext highlighter-rouge">x</code> out of the modified image. It then passes the tensor through the model, and scores it as a variable <code class="language-plaintext highlighter-rouge">y</code> on a typical sigmoid activation function. It looks like our goal is to push that score <code class="language-plaintext highlighter-rouge">y</code> down past 0.5. Luckily, models are deterministic, so there is no randomness involved from the challenge.</p>
+
+<p>Also, I’m not sure what’s going on with the <code class="language-plaintext highlighter-rouge">modified.transpose(2,0,1)</code>. I’m assuming that’s just Bene Gesserit witchery, and is not vital to this challenge.</p>
+
+<p>Our goal is to generate a series of up to 30 pixel alterations that will trick the model into not recognizing the image as a worm. Seems simple enough. I figured this challenge would take me a while, so I created an intentionally naive implementation to run in the background while I built a more intelligent solution.</p>
+
+<p>This script randomly generates pixels to change, and if the score is lower than the lowest on record, it prints out the score and the input values:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/local/bin/python
+</span><span class="kn">import</span> <span class="nn">sys</span>
+  
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet18</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
+  
+<span class="k">def</span> <span class="nf">random_gen</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">223</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">223</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">r</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">g</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">b</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet18</span><span class="p">()</span>
+<span class="n">model</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">fc</span><span class="p">.</span><span class="n">in_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">'model.pt'</span><span class="p">))</span>
+  
+<span class="n">original</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">(</span><span class="n">Image</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"worm.png"</span><span class="p">))</span>
+  
+<span class="n">lowest</span> <span class="o">=</span> <span class="mi">1</span>
+  
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">modified</span> <span class="o">=</span> <span class="n">original</span><span class="p">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="p">[</span><span class="n">random_gen</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">)]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mod</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">mod</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">mod</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">mod</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">modified</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">lowest</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">lowest</span> <span class="o">=</span> <span class="n">y</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">f"New lowest: </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s"> | </span><span class="si">{</span><span class="n">mods</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">mods</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">break</span>
+  
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"res.txt"</span><span class="p">,</span> <span class="s">"a+"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">elems</span> <span class="o">=</span> <span class="s">";"</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="s">','</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">mod</span><span class="p">))</span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">f</span><span class="p">.</span><span class="n">writeline</span><span class="p">(</span><span class="n">elems</span><span class="p">)</span>
+  
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">original</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here’s what it looks like running for about a minute on my machine:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  attack_of_the_worm  python3 attack.py
+New lowest: tensor<span class="o">([[</span>0.5726]]<span class="o">)</span> | <span class="o">[(</span>160, 27, 79, 122, 177<span class="o">)</span>, <span class="o">(</span>97, 221, 13, 170, 139<span class="o">)</span>, <span class="o">(</span>40, 158, 189, 22, 186<span class="o">)</span>, <span class="o">(</span>95, 105, 0, 222, 106<span class="o">)</span>, <span class="o">(</span>145, 5, 34, 173, 234<span class="o">)</span>, <span class="o">(</span>155, 3, 196, 57, 29<span class="o">)</span>, <span class="o">(</span>51, 42, 137, 161, 249<span class="o">)</span>, <span class="o">(</span>125, 41, 245, 121, 112<span class="o">)</span>, <span class="o">(</span>74, 22, 121, 61, 235<span class="o">)</span>, <span class="o">(</span>6, 157, 148, 183, 211<span class="o">)</span>, <span class="o">(</span>45, 127, 41, 129, 19<span class="o">)</span>, <span class="o">(</span>85, 67, 5, 91, 218<span class="o">)</span>, <span class="o">(</span>22, 187, 187, 255, 50<span class="o">)</span>, <span class="o">(</span>103, 21, 219, 204, 160<span class="o">)</span>, <span class="o">(</span>35, 199, 70, 247, 29<span class="o">)</span>, <span class="o">(</span>187, 203, 93, 219, 21<span class="o">)</span>, <span class="o">(</span>168, 137, 31, 239, 179<span class="o">)</span>, <span class="o">(</span>173, 68, 32, 40, 208<span class="o">)</span>, <span class="o">(</span>123, 185, 205, 3, 172<span class="o">)</span>, <span class="o">(</span>187, 91, 4, 193, 51<span class="o">)</span>, <span class="o">(</span>209, 10, 196, 216, 130<span class="o">)</span>, <span class="o">(</span>81, 162, 111, 99, 240<span class="o">)</span>, <span class="o">(</span>176, 48, 174, 162, 235<span class="o">)</span>, <span class="o">(</span>7, 213, 226, 113, 4<span class="o">)</span>, <span class="o">(</span>20, 90, 132, 14, 119<span class="o">)</span>, <span class="o">(</span>163, 103, 216, 99, 47<span class="o">)</span>, <span class="o">(</span>0, 189, 109, 9, 60<span class="o">)</span>, <span class="o">(</span>70, 154, 209, 58, 33<span class="o">)</span>, <span class="o">(</span>175, 148, 180, 206, 169<span class="o">)</span>, <span class="o">(</span>51, 29, 134, 44, 182<span class="o">)]</span>
+New lowest: tensor<span class="o">([[</span>0.5714]]<span class="o">)</span> | <span class="o">[(</span>40, 20, 203, 121, 224<span class="o">)</span>, <span class="o">(</span>161, 86, 78, 25, 215<span class="o">)</span>, <span class="o">(</span>118, 58, 155, 59, 103<span class="o">)</span>, <span class="o">(</span>35, 137, 174, 16, 114<span class="o">)</span>, <span class="o">(</span>87, 138, 0, 54, 98<span class="o">)</span>, <span class="o">(</span>170, 67, 125, 17, 231<span class="o">)</span>, <span class="o">(</span>217, 157, 174, 225, 134<span class="o">)</span>, <span class="o">(</span>117, 6, 216, 79, 30<span class="o">)</span>, <span class="o">(</span>148, 12, 59, 116, 13<span class="o">)</span>, <span class="o">(</span>29, 140, 75, 121, 149<span class="o">)</span>, <span class="o">(</span>111, 8, 25, 110, 152<span class="o">)</span>, <span class="o">(</span>208, 29, 204, 68, 94<span class="o">)</span>, <span class="o">(</span>14, 15, 209, 32, 13<span class="o">)</span>, <span class="o">(</span>209, 56, 141, 100, 59<span class="o">)</span>, <span class="o">(</span>179, 29, 146, 217, 183<span class="o">)</span>, <span class="o">(</span>86, 114, 190, 84, 218<span class="o">)</span>, <span class="o">(</span>193, 126, 254, 163, 43<span class="o">)</span>, <span class="o">(</span>169, 87, 40, 233, 225<span class="o">)</span>, <span class="o">(</span>1, 175, 158, 221, 197<span class="o">)</span>, <span class="o">(</span>0, 208, 48, 69, 76<span class="o">)</span>, <span class="o">(</span>221, 37, 4, 121, 80<span class="o">)</span>, <span class="o">(</span>101, 130, 179, 61, 73<span class="o">)</span>, <span class="o">(</span>117, 21, 237, 198, 79<span class="o">)</span>, <span class="o">(</span>122, 184, 100, 11, 172<span class="o">)</span>, <span class="o">(</span>117, 220, 43, 214, 123<span class="o">)</span>, <span class="o">(</span>222, 7, 181, 96, 179<span class="o">)</span>, <span class="o">(</span>124, 169, 147, 248, 214<span class="o">)</span>, <span class="o">(</span>138, 105, 243, 222, 55<span class="o">)</span>, <span class="o">(</span>137, 64, 121, 131, 16<span class="o">)</span>, <span class="o">(</span>18, 1, 109, 207, 105<span class="o">)]</span>
+New lowest: tensor<span class="o">([[</span>0.5628]]<span class="o">)</span> | <span class="o">[(</span>182, 90, 156, 119, 223<span class="o">)</span>, <span class="o">(</span>91, 171, 40, 87, 112<span class="o">)</span>, <span class="o">(</span>187, 8, 70, 227, 251<span class="o">)</span>, <span class="o">(</span>152, 161, 29, 210, 232<span class="o">)</span>, <span class="o">(</span>149, 156, 184, 12, 173<span class="o">)</span>, <span class="o">(</span>163, 142, 228, 149, 106<span class="o">)</span>, <span class="o">(</span>41, 140, 87, 50, 59<span class="o">)</span>, <span class="o">(</span>166, 1, 152, 171, 255<span class="o">)</span>, <span class="o">(</span>86, 199, 163, 109, 112<span class="o">)</span>, <span class="o">(</span>108, 223, 129, 32, 165<span class="o">)</span>, <span class="o">(</span>175, 102, 167, 179, 147<span class="o">)</span>, <span class="o">(</span>223, 174, 235, 181, 21<span class="o">)</span>, <span class="o">(</span>18, 220, 147, 153, 81<span class="o">)</span>, <span class="o">(</span>152, 187, 26, 250, 68<span class="o">)</span>, <span class="o">(</span>15, 193, 100, 41, 199<span class="o">)</span>, <span class="o">(</span>161, 218, 83, 118, 48<span class="o">)</span>, <span class="o">(</span>58, 195, 113, 155, 226<span class="o">)</span>, <span class="o">(</span>23, 96, 190, 106, 90<span class="o">)</span>, <span class="o">(</span>84, 168, 168, 220, 231<span class="o">)</span>, <span class="o">(</span>2, 199, 59, 4, 217<span class="o">)</span>, <span class="o">(</span>159, 124, 197, 1, 247<span class="o">)</span>, <span class="o">(</span>221, 25, 83, 83, 34<span class="o">)</span>, <span class="o">(</span>1, 43, 211, 145, 168<span class="o">)</span>, <span class="o">(</span>14, 112, 47, 127, 143<span class="o">)</span>, <span class="o">(</span>55, 145, 96, 82, 124<span class="o">)</span>, <span class="o">(</span>169, 44, 240, 127, 117<span class="o">)</span>, <span class="o">(</span>16, 84, 179, 126, 36<span class="o">)</span>, <span class="o">(</span>3, 100, 140, 63, 134<span class="o">)</span>, <span class="o">(</span>156, 151, 236, 33, 104<span class="o">)</span>, <span class="o">(</span>74, 189, 132, 228, 69<span class="o">)]</span>
+New lowest: tensor<span class="o">([[</span>0.5590]]<span class="o">)</span> | <span class="o">[(</span>136, 51, 188, 199, 249<span class="o">)</span>, <span class="o">(</span>27, 81, 42, 113, 172<span class="o">)</span>, <span class="o">(</span>46, 122, 64, 245, 128<span class="o">)</span>, <span class="o">(</span>66, 194, 226, 109, 132<span class="o">)</span>, <span class="o">(</span>211, 124, 39, 115, 227<span class="o">)</span>, <span class="o">(</span>27, 74, 86, 181, 32<span class="o">)</span>, <span class="o">(</span>7, 44, 76, 180, 218<span class="o">)</span>, <span class="o">(</span>15, 220, 25, 151, 56<span class="o">)</span>, <span class="o">(</span>138, 176, 247, 47, 114<span class="o">)</span>, <span class="o">(</span>51, 203, 24, 252, 210<span class="o">)</span>, <span class="o">(</span>33, 152, 183, 180, 134<span class="o">)</span>, <span class="o">(</span>60, 211, 186, 57, 0<span class="o">)</span>, <span class="o">(</span>203, 134, 174, 223, 153<span class="o">)</span>, <span class="o">(</span>35, 15, 134, 217, 76<span class="o">)</span>, <span class="o">(</span>169, 96, 68, 190, 125<span class="o">)</span>, <span class="o">(</span>8, 83, 167, 110, 127<span class="o">)</span>, <span class="o">(</span>181, 14, 35, 237, 67<span class="o">)</span>, <span class="o">(</span>49, 71, 238, 242, 132<span class="o">)</span>, <span class="o">(</span>120, 177, 234, 145, 248<span class="o">)</span>, <span class="o">(</span>26, 34, 170, 103, 6<span class="o">)</span>, <span class="o">(</span>1, 197, 62, 121, 145<span class="o">)</span>, <span class="o">(</span>124, 13, 147, 91, 180<span class="o">)</span>, <span class="o">(</span>106, 107, 128, 112, 160<span class="o">)</span>, <span class="o">(</span>43, 69, 15, 183, 119<span class="o">)</span>, <span class="o">(</span>170, 169, 69, 205, 95<span class="o">)</span>, <span class="o">(</span>54, 109, 161, 227, 178<span class="o">)</span>, <span class="o">(</span>126, 188, 70, 143, 102<span class="o">)</span>, <span class="o">(</span>27, 44, 7, 117, 193<span class="o">)</span>, <span class="o">(</span>51, 204, 123, 39, 233<span class="o">)</span>, <span class="o">(</span>49, 206, 216, 175, 227<span class="o">)]</span>New lowest: tensor<span class="o">([[</span>0.5576]]<span class="o">)</span> | <span class="o">[(</span>13, 220, 191, 38, 104<span class="o">)</span>, <span class="o">(</span>14, 42, 131, 129, 11<span class="o">)</span>, <span class="o">(</span>197, 146, 223, 106, 212<span class="o">)</span>, <span class="o">(</span>50, 218, 245, 169, 55<span class="o">)</span>, <span class="o">(</span>173, 209, 146, 233, 49<span class="o">)</span>, <span class="o">(</span>197, 112, 102, 200, 226<span class="o">)</span>, <span class="o">(</span>148, 146, 6, 225, 75<span class="o">)</span>, <span class="o">(</span>13, 114, 50, 142, 61<span class="o">)</span>, <span class="o">(</span>157, 72, 72, 192, 9<span class="o">)</span>, <span class="o">(</span>162, 137, 57, 240, 169<span class="o">)</span>, <span class="o">(</span>131, 131, 115, 226, 240<span class="o">)</span>, <span class="o">(</span>133, 33, 187, 202, 56<span class="o">)</span>, <span class="o">(</span>107, 43, 192, 122, 226<span class="o">)</span>, <span class="o">(</span>10, 123, 81, 47, 19<span class="o">)</span>, <span class="o">(</span>81, 68, 184, 251, 60<span class="o">)</span>, <span class="o">(</span>200, 102, 90, 207, 246<span class="o">)</span>, <span class="o">(</span>92, 52, 57, 154, 174<span class="o">)</span>, <span class="o">(</span>58, 38, 9, 172, 242<span class="o">)</span>, <span class="o">(</span>126, 159, 10, 25, 9<span class="o">)</span>, <span class="o">(</span>32, 141, 225, 89, 155<span class="o">)</span>, <span class="o">(</span>18, 138, 113, 128, 238<span class="o">)</span>, <span class="o">(</span>81, 115, 130, 95, 16<span class="o">)</span>, <span class="o">(</span>91, 139, 132, 214, 223<span class="o">)</span>, <span class="o">(</span>14, 204, 83, 203, 115<span class="o">)</span>, <span class="o">(</span>63, 68, 239, 195, 149<span class="o">)</span>, <span class="o">(</span>133, 90, 94, 33, 39<span class="o">)</span>, <span class="o">(</span>222, 154, 119, 70, 219<span class="o">)</span>, <span class="o">(</span>132, 175, 209, 166, 241<span class="o">)</span>, <span class="o">(</span>201, 69, 238, 80, 40<span class="o">)</span>, <span class="o">(</span>221, 51, 152, 77, 139<span class="o">)]</span>
+New lowest: tensor<span class="o">([[</span>0.5566]]<span class="o">)</span> | <span class="o">[(</span>65, 121, 250, 176, 193<span class="o">)</span>, <span class="o">(</span>98, 110, 112, 225, 157<span class="o">)</span>, <span class="o">(</span>66, 170, 220, 82, 218<span class="o">)</span>, <span class="o">(</span>208, 189, 232, 14, 155<span class="o">)</span>, <span class="o">(</span>149, 45, 86, 43, 252<span class="o">)</span>, <span class="o">(</span>164, 26, 237, 60, 206<span class="o">)</span>, <span class="o">(</span>209, 49, 213, 107, 92<span class="o">)</span>, <span class="o">(</span>148, 23, 37, 238, 68<span class="o">)</span>, <span class="o">(</span>132, 200, 146, 147, 63<span class="o">)</span>, <span class="o">(</span>75, 176, 15, 230, 193<span class="o">)</span>, <span class="o">(</span>190, 129, 104, 212, 218<span class="o">)</span>, <span class="o">(</span>22, 202, 86, 118, 217<span class="o">)</span>, <span class="o">(</span>101, 208, 115, 107, 75<span class="o">)</span>, <span class="o">(</span>162, 78, 191, 208, 8<span class="o">)</span>, <span class="o">(</span>8, 136, 139, 244, 110<span class="o">)</span>, <span class="o">(</span>203, 183, 82, 192, 173<span class="o">)</span>, <span class="o">(</span>162, 190, 95, 32, 165<span class="o">)</span>, <span class="o">(</span>131, 113, 41, 228, 212<span class="o">)</span>, <span class="o">(</span>151, 7, 145, 164, 240<span class="o">)</span>, <span class="o">(</span>190, 33, 74, 210, 63<span class="o">)</span>, <span class="o">(</span>195, 88, 175, 200, 200<span class="o">)</span>, <span class="o">(</span>171, 48, 40, 97, 138<span class="o">)</span>, <span class="o">(</span>213, 102, 20, 198, 178<span class="o">)</span>, <span class="o">(</span>58, 58, 49, 180, 218<span class="o">)</span>, <span class="o">(</span>200, 91, 179, 231, 108<span class="o">)</span>, <span class="o">(</span>214, 115, 103, 196, 178<span class="o">)</span>, <span class="o">(</span>194, 75, 98, 196, 178<span class="o">)</span>, <span class="o">(</span>194, 85, 135, 252, 119<span class="o">)</span>, <span class="o">(</span>190, 67, 29, 97, 98<span class="o">)</span>, <span class="o">(</span>91, 94, 145, 186, 249<span class="o">)]</span>
+New lowest: tensor<span class="o">([[</span>0.5557]]<span class="o">)</span> | <span class="o">[(</span>55, 118, 19, 14, 8<span class="o">)</span>, <span class="o">(</span>176, 218, 69, 153, 26<span class="o">)</span>, <span class="o">(</span>174, 3, 142, 74, 55<span class="o">)</span>, <span class="o">(</span>23, 92, 229, 7, 67<span class="o">)</span>, <span class="o">(</span>167, 79, 32, 52, 60<span class="o">)</span>, <span class="o">(</span>4, 77, 71, 197, 9<span class="o">)</span>, <span class="o">(</span>110, 222, 162, 51, 237<span class="o">)</span>, <span class="o">(</span>182, 134, 146, 244, 133<span class="o">)</span>, <span class="o">(</span>168, 2, 206, 40, 227<span class="o">)</span>, <span class="o">(</span>84, 200, 246, 100, 15<span class="o">)</span>, <span class="o">(</span>73, 203, 141, 138, 0<span class="o">)</span>, <span class="o">(</span>202, 186, 170, 244, 205<span class="o">)</span>, <span class="o">(</span>44, 55, 35, 149, 206<span class="o">)</span>, <span class="o">(</span>61, 170, 122, 19, 121<span class="o">)</span>, <span class="o">(</span>24, 165, 138, 20, 246<span class="o">)</span>, <span class="o">(</span>132, 160, 183, 139, 31<span class="o">)</span>, <span class="o">(</span>198, 204, 149, 215, 161<span class="o">)</span>, <span class="o">(</span>168, 182, 131, 254, 160<span class="o">)</span>, <span class="o">(</span>166, 115, 176, 55, 60<span class="o">)</span>, <span class="o">(</span>202, 171, 47, 236, 147<span class="o">)</span>, <span class="o">(</span>78, 19, 69, 127, 44<span class="o">)</span>, <span class="o">(</span>3, 97, 192, 145, 11<span class="o">)</span>, <span class="o">(</span>123, 59, 69, 33, 214<span class="o">)</span>, <span class="o">(</span>46, 89, 42, 186, 82<span class="o">)</span>, <span class="o">(</span>37, 179, 239, 49, 241<span class="o">)</span>, <span class="o">(</span>220, 212, 253, 106, 178<span class="o">)</span>, <span class="o">(</span>156, 69, 164, 125, 174<span class="o">)</span>, <span class="o">(</span>123, 41, 60, 252, 219<span class="o">)</span>, <span class="o">(</span>156, 210, 160, 189, 193<span class="o">)</span>, <span class="o">(</span>93, 63, 6, 97, 94<span class="o">)]</span>
+</code></pre></div></div>
+
+<p>It looks like it made some solid progress. The answer is not nearly this easy. Let’s let this run in the background while we try a solution with a bit more complexity.</p>
+
+<p>Let’s abstract away the whole ML model portion of this challenge. Our goal is to minimize the value of <code class="language-plaintext highlighter-rouge">f(x)</code>, <code class="language-plaintext highlighter-rouge">f</code> being the function of running the input through the model, and <code class="language-plaintext highlighter-rouge">x</code> being the pixels we pass change. We have a couple different options at our disposal, one of them being a technique called <em>Gradient Ascent/Descent</em>. The basic math works out like this:</p>
+
+<p>Given a curve <code class="language-plaintext highlighter-rouge">f(x)</code>, if your goal is to minimize the value of <code class="language-plaintext highlighter-rouge">f(x)</code>, one of the options is to look at the derivative of the point that you are at on the curve. In other words, you look at the slope. The common explanation is if you are trying to ascend to a peak of the mountain, you could likely get pretty close by just going up hill. In the case of descending, think about a ball rolling down a curve following gravity:
+<img src="https://miro.medium.com/v2/resize:fit:1400/1*47skUygd3tWf3yB9A10QHg.gif" alt="Gradient Descent gif" /></p>
+
+<p>In this gif, we see that some of the balls make it to what we call a “Local minimum” rather than the “Global minimum”, which could be a problem, but we can burn that bridge when we get to it.</p>
+
+<p>The trick is, rather than operating in 2 or 3 dimensions (pictured above), using gradient ascent would require <strong>151</strong>  dimensions (!!!). This is because each one of the five values for the pixel would be assigned a dimension, resulting in 5 * 30 = 150 inputs, with the 151st being the resulting <code class="language-plaintext highlighter-rouge">f(x)</code> dimension. I did a lot of reading, but I couldn’t find any clean python examples that I could abstract to an arbitrary number of dimensions, though it was 2 AM at this point, and I just got done enjoying 2 Double Doubles and some cheese fries from the In-n-Out in Orem, so the perfect blog post or paper probably exists somewhere. Nonetheless, here is some of the resources I consulted:</p>
+<ul>
+  <li><a href="https://www.geeksforgeeks.org/how-to-implement-a-gradient-descent-in-python-to-find-a-local-minimum/">geeksforgeeks.com</a></li>
+  <li><a href="https://courses.lumenlearning.com/calculus3/chapter/three-dimensional-gradients-and-directional-derivatives/">Some Calculus III course material</a></li>
+  <li><a href="https://realpython.com/gradient-descent-algorithm-python/">RealPython</a></li>
+</ul>
+
+<p>I started poking around for more options, including a technique called “Fast Gradient Sign Method” or FGSM, most clearly illustrated in this <a href="https://www.tensorflow.org/tutorials/generative/adversarial_fgsm">tensorflow.org</a> post:
+<img src="https://www.tensorflow.org/static/tutorials/generative/images/adversarial_example.png" alt="PandaNematode" /></p>
+
+<p>But it requires the gradient vector, symbolized by that upside-down delta which runs into the same issue that I didn’t want to deal with earlier. I then read about “Genetic Algorithms”, a concept that pops up in a lot of “<a href="https://www.youtube.com/watch?v=ovIykchkW5I&amp;ab_channel=CodeBullet">AI learns how to play X game</a>” videos on Youtube. The basic idea is that there are a group of “agents” with varying characteristics that are passed into a function. Based on the scoring, an agent could be selected to be “reproduce”. The algorithm will then cull all but the highest performing agents, mutate their characteristics, sometimes swap some agents characteristics to mimic sexual reproduction, and run the test again This algorithm is pretty old, with implementations of it being dated back to <a href="https://link.springer.com/article/10.1007/BF01556602">this</a> 1963 paper by Dr. Nils Aall Barricelli, from before we decided that field-defining research could only be done by people with lame sounding names. The goal is that over time, the population of agents will get better at the job of increasing the value of the scoring function.</p>
+
+<p>We can apply this by:</p>
+<ol>
+  <li>Create a bunch of agents, each storing a list of changed pixels</li>
+  <li>We then need to design a scoring function that will increase as the result passing the altered image through the given model decreases.</li>
+  <li>We score each agent, select the best agents, and mutate the list of changed pixels.</li>
+  <li>Repeat step 3 until the score <code class="language-plaintext highlighter-rouge">y</code> is less than 0.5.
+Step 1 and 2 are pretty easy, but 3 and 4 seem like a lot of work, so I turned to <a href="https://pygad.readthedocs.io/en/latest/">PyGAD</a>, a Python library for genetic algorithms.</li>
+</ol>
+
+<p>After a whole bunch of reading, I created this script:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/env python3
+</span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">floor</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet18</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
+  
+<span class="kn">import</span> <span class="nn">pygad</span>
+  
+<span class="c1"># Load up model
+</span><span class="n">model</span> <span class="o">=</span> <span class="n">resnet18</span><span class="p">()</span>
+<span class="n">model</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">fc</span><span class="p">.</span><span class="n">in_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">'model.pt'</span><span class="p">))</span>
+  
+<span class="n">original</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">(</span><span class="n">Image</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"worm.png"</span><span class="p">))</span>
+  
+<span class="k">def</span> <span class="nf">random_mods</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">223</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">223</span><span class="p">)</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">r</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">g</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">b</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">])</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">mods</span>
+  
+<span class="k">def</span> <span class="nf">unflatten</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">)</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">)</span> <span class="o">//</span> <span class="mi">5</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">mod</span> <span class="o">=</span> <span class="p">[</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">0</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">mods</span>
+  
+<span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">mods</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">modified</span> <span class="o">=</span> <span class="n">original</span><span class="p">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">mods</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">r</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">g</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">b</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">modified</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">y</span>
+  
+<span class="n">desired_y</span> <span class="o">=</span> <span class="mf">0.48</span>
+  
+<span class="k">def</span> <span class="nf">fitness_func</span><span class="p">(</span><span class="n">ga_instance</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">solution_idx</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">fitness</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">desired_y</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">fitness</span>
+  
+<span class="n">fitness_function</span> <span class="o">=</span> <span class="n">fitness_func</span>
+  
+<span class="n">num_gens</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">num_parents_mating</span> <span class="o">=</span> <span class="mi">4</span>
+  
+<span class="n">sol_per_pop</span> <span class="o">=</span> <span class="mi">8</span>
+  
+<span class="n">num_pixels</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">data_points_per_pixel</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">num_genes</span> <span class="o">=</span> <span class="n">num_pixels</span> <span class="o">*</span> <span class="n">data_points_per_pixel</span>
+  
+<span class="n">init_range_low</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">init_range_high</span> <span class="o">=</span> <span class="mi">1</span>
+  
+<span class="n">parent_selection_type</span> <span class="o">=</span> <span class="s">"sss"</span>
+<span class="n">keep_parents</span> <span class="o">=</span> <span class="mi">1</span>
+  
+<span class="n">crossover_type</span> <span class="o">=</span> <span class="s">"single_point"</span>
+  
+<span class="n">mutation_type</span> <span class="o">=</span> <span class="s">"random"</span>
+<span class="n">mutation_percent_genes</span> <span class="o">=</span> <span class="mi">10</span>
+  
+<span class="n">x_y_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">224</span><span class="p">)</span> <span class="o">/</span> <span class="mi">224</span>
+<span class="n">r_g_b_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span> <span class="o">/</span> <span class="mi">256</span>
+  
+<span class="n">gene_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_bounds</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_y_bounds</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_bounds</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_y_bounds</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_bounds</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_g_b_bounds</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_bounds</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_g_b_bounds</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_bounds</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">r_g_b_bounds</span><span class="p">)</span>
+  
+<span class="n">ga_instance</span> <span class="o">=</span> <span class="n">pygad</span><span class="p">.</span><span class="n">GA</span><span class="p">(</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">num_generations</span><span class="o">=</span><span class="n">num_gens</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">num_parents_mating</span><span class="o">=</span><span class="n">num_parents_mating</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">fitness_func</span><span class="o">=</span><span class="n">fitness_function</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">sol_per_pop</span><span class="o">=</span><span class="n">sol_per_pop</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">num_genes</span><span class="o">=</span><span class="n">num_genes</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">init_range_low</span><span class="o">=</span><span class="n">init_range_low</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">init_range_high</span><span class="o">=</span><span class="n">init_range_high</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">parent_selection_type</span><span class="o">=</span><span class="n">parent_selection_type</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">keep_parents</span><span class="o">=</span><span class="n">keep_parents</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">crossover_type</span><span class="o">=</span><span class="n">crossover_type</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mutation_type</span><span class="o">=</span><span class="n">mutation_type</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mutation_num_genes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">gene_space</span><span class="o">=</span><span class="n">gene_bounds</span>
+<span class="p">)</span>
+  
+<span class="n">ga_instance</span><span class="p">.</span><span class="n">run</span><span class="p">()</span>
+  
+<span class="n">ga_instance</span><span class="p">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">"genetic"</span><span class="p">)</span>
+  
+<span class="n">solution</span><span class="p">,</span> <span class="n">solution_fitness</span><span class="p">,</span> <span class="n">solution_idx</span> <span class="o">=</span> <span class="n">ga_instance</span><span class="p">.</span><span class="n">best_solution</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s">f"Best solution: </span><span class="si">{</span><span class="n">solution</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">f"Fitness value: </span><span class="si">{</span><span class="n">solution_fitness</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+  
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">fitness_func</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">f"Predicted fitness using solution: </span><span class="si">{</span><span class="n">prediction</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">f"Score using solution: </span><span class="si">{</span><span class="n">score</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We can see that its target for <code class="language-plaintext highlighter-rouge">y</code> is <code class="language-plaintext highlighter-rouge">0.48</code>, defined by <code class="language-plaintext highlighter-rouge">desired_y</code>. That means the algorithm is continuously optimizing a population of agents that when run through the model, return close to that number.</p>
+
+<p>Running this program takes something like 5 minutes on my mid range laptop, and 2 minutes on BYU’s Cybersecurity Research Lab hashcracking rig. Because the initial conditions are random, it’s not always guaranteed to work. Here’s an output that results in <code class="language-plaintext highlighter-rouge">y</code> being less than 0.5:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  attack_of_the_worm  python3 genetic_playground.py                               /home/jakemull/.local/lib/python3.10/site-packages/pygad/pygad.py:1139: UserWarning: The <span class="s1">'delay_after_gen'</span> parameter is deprecated starting from PyGAD 3.3.0. To delay or pause the evolution after each generation, assign a callback <span class="k">function</span>/method to the <span class="s1">'on_generation'</span> parameter to adds some <span class="nb">time </span>delay.                              warnings.warn<span class="o">(</span><span class="s2">"The 'delay_after_gen' parameter is deprecated starting from PyGAD
+3.3.0. To delay or pause the evolution after each generation, assign a callback function/method to the 'on_generation' parameter to adds some time delay."</span><span class="o">)</span>           Best solution: <span class="o">[</span>0.6205357142857143, 0.6964285714285714, 0.5390625, 0.6875, 0.30078125, 0.5535714285714286, 0.5535714285714286, 0.86328125, 0.66796875, 0.87890625, 0.8883928571428571, 0.8080357142857143, 0.94140625, 0.9609375, 0.12109375, 0.8526785714285714, 0.5089285714285714, 0.87109375, 0.28515625, 0.3828125, 0.8526785714285714, 0.9017857142857143, 0.8515625, 0.91796875, 0.01171875, 0.38392857142857145, 0.49107142857142855, 0.7578125, 0.2890625, 0.58984375, 0.9642857142857143, 0.6607142857142857, 0.125, 0.9609375, 0.41796875, 0.9598214285714286, 0.8258928571428571, 0.2265625, 0.96484375, 0.50390625, 0.41964285714285715, 0.59375, 0.38671875, 0.921875, 0.76171875, 0.7410714285714286, 0.044642857142857144, 0.72265625, 0.88671875, 0.71484375, 0.7589285714285714, 0.14732142857142858, 0.03125, 0.73046875, 0.97265625, 0.36607142857142855, 0.03571428571428571, 0.74609375, 0.2109375, 0.0625, 0.16517857142857142, 0.0625, 0.4765625, 0.99609375, 0.78125, 0.4330357142857143, 0.59375, 0.921875, 0.625, 0.4921875, 0.6116071428571429, 0.9375, 0.6875, 0.25390625, 0.8046875, 0.03571428571428571, 0.8928571428571429, 0.9375, 0.796875, 0.9765625, 0.7008928571428571, 0.84375, 0.51171875, 0.89453125, 0.72265625, 0.6607142857142857, 0.5178571428571429, 0.98046875, 0.90625, 0.83984375, 0.15625, 0.9419642857142857, 0.921875, 0.92578125, 0.875, 0.9598214285714286, 0.6919642857142857, 0.9375, 0.6328125, 0.71875, 0.39285714285714285, 0.47767857142857145, 0.57421875, 0.734375, 0.046875, 0.9910714285714286, 0.3080357142857143, 0.3984375, 0.01953125, 0.93359375, 0.65625, 0.65625, 0.1953125, 0.82421875, 0.87109375, 0.8258928571428571, 0.125, 0.76171875, 0.73046875, 0.890625, 0.8080357142857143, 0.5223214285714286, 0.2734375, 0.02734375, 0.296875, 0.6428571428571429, 0.16071428571428573, 0.21875, 0.90625, 0.01171875, 0.5535714285714286, 0.36607142857142855, 0.109375, 0.4453125, 0.2265625, 0.2857142857142857,
+0.27232142857142855, 0.20703125, 0.97265625, 0.84765625, 0.8258928571428571, 0.008928571428571428, 0.890625, 0.5703125, 0.15625, 0.8125, 0.12946428571428573, 0.26171875, 0.84375, 0.8671875]
+Fitness value: 138.7860107421875                                                   Predicted fitness using solution: 138.7860107421875
+Score using solution: tensor<span class="o">([[</span>0.4872]]<span class="o">)</span>
+</code></pre></div></div>
+
+<p>The clock doesn’t seem to be correct, probably a result of WSL jank.</p>
+
+<p>It’s worth noting that the random attempt was running for something like 12 hours, and only got to a lowest of 0.543 confidence.</p>
+
+<p>We now need to turn this array into a string of format <code class="language-plaintext highlighter-rouge">x,y,r,g,b;x,y,...</code> to pass to the server. We can copy the output into this script to both test the inputs, and create a string to pass to the server:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/local/bin/python
+</span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">floor</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet18</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
+  
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet18</span><span class="p">()</span>
+<span class="n">model</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">fc</span><span class="p">.</span><span class="n">in_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">model</span><span class="p">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="s">"model.pt"</span><span class="p">))</span>
+  
+<span class="n">original</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">array</span><span class="p">(</span><span class="n">Image</span><span class="p">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"worm.png"</span><span class="p">))</span>
+  
+<span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">mods</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">modified</span> <span class="o">=</span> <span class="n">original</span><span class="p">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">mods</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">r</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">g</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">b</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">mod</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">modified</span><span class="p">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span>
+<span class="err"> </span> <span class="err"> </span> <span class="p">).</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">with</span> <span class="n">torch</span><span class="p">.</span><span class="n">no_grad</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">y</span>
+  
+<span class="k">def</span> <span class="nf">unflatten</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">)</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_mods</span><span class="p">)</span> <span class="o">//</span> <span class="mi">5</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">mod</span> <span class="o">=</span> <span class="p">[</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">0</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flat_mods</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="p">],</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="p">]</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">mods</span>  
+
+<span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span> <span class="c1"># Copy inputs here
+</span>
+<span class="n">mods</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">mods</span><span class="p">)</span>
+<span class="n">num_of_pixels</span> <span class="o">=</span> <span class="mi">30</span>
+  
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_of_pixels</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">224</span><span class="p">))</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">mods</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span><span class="p">))</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="n">score</span><span class="p">(</span><span class="n">inputs</span><span class="p">))</span>
+  
+<span class="n">res</span> <span class="o">=</span> <span class="s">""</span>
+<span class="k">for</span> <span class="n">pixel</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">res</span> <span class="o">+=</span> <span class="s">","</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">res</span> <span class="o">+=</span> <span class="s">";"</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Running this script returns:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  attack_of_the_worm  python3 interpret_solve.py
+<span class="o">[[</span>0.6205357142857143, 0.6964285714285714, 0.5390625, 0.6875, 0.30078125], <span class="o">[</span>0.5535714285714286, 0.5535714285714286, 0.86328125, 0.66796875, 0.87890625], <span class="o">[</span>0.8883928571428571, 0.8080357142857143, 0.94140625, 0.9609375, 0.12109375], <span class="o">[</span>0.8526785714285714, 0.5089285714285714, 0.87109375, 0.28515625, 0.3828125], <span class="o">[</span>0.8526785714285714, 0.9017857142857143, 0.8515625, 0.91796875, 0.01171875], <span class="o">[</span>0.38392857142857145, 0.49107142857142855, 0.7578125, 0.2890625, 0.58984375], <span class="o">[</span>0.9642857142857143, 0.6607142857142857, 0.125, 0.9609375, 0.41796875], <span class="o">[</span>0.9598214285714286, 0.8258928571428571, 0.2265625, 0.96484375, 0.50390625], <span class="o">[</span>0.41964285714285715, 0.59375, 0.38671875, 0.921875, 0.76171875], <span class="o">[</span>0.7410714285714286, 0.044642857142857144, 0.72265625, 0.88671875, 0.71484375], <span class="o">[</span>0.7589285714285714, 0.14732142857142858, 0.03125, 0.73046875, 0.97265625], <span class="o">[</span>0.36607142857142855, 0.03571428571428571, 0.74609375, 0.2109375, 0.0625], <span class="o">[</span>0.16517857142857142, 0.0625, 0.4765625, 0.99609375, 0.78125], <span class="o">[</span>0.4330357142857143, 0.59375, 0.921875, 0.625, 0.4921875], <span class="o">[</span>0.6116071428571429, 0.9375, 0.6875, 0.25390625, 0.8046875], <span class="o">[</span>0.03571428571428571, 0.8928571428571429, 0.9375, 0.796875, 0.9765625], <span class="o">[</span>0.7008928571428571, 0.84375, 0.51171875, 0.89453125, 0.72265625], <span class="o">[</span>0.6607142857142857, 0.5178571428571429, 0.98046875, 0.90625, 0.83984375], <span class="o">[</span>0.15625, 0.9419642857142857, 0.921875, 0.92578125, 0.875], <span class="o">[</span>0.9598214285714286, 0.6919642857142857, 0.9375, 0.6328125, 0.71875], <span class="o">[</span>0.39285714285714285, 0.47767857142857145, 0.57421875, 0.734375, 0.046875], <span class="o">[</span>0.9910714285714286, 0.3080357142857143, 0.3984375, 0.01953125, 0.93359375], <span class="o">[</span>0.65625, 0.65625, 0.1953125, 0.82421875, 0.87109375], <span class="o">[</span>0.8258928571428571, 0.125, 0.76171875, 0.73046875, 0.890625], <span class="o">[</span>0.8080357142857143, 0.5223214285714286, 0.2734375, 0.02734375, 0.296875], <span class="o">[</span>0.6428571428571429, 0.16071428571428573, 0.21875, 0.90625, 0.01171875], <span class="o">[</span>0.5535714285714286, 0.36607142857142855, 0.109375, 0.4453125, 0.2265625], <span class="o">[</span>0.2857142857142857, 0.27232142857142855, 0.20703125, 0.97265625, 0.84765625], <span class="o">[</span>0.8258928571428571, 0.008928571428571428, 0.890625, 0.5703125, 0.15625], <span class="o">[</span>0.8125, 0.12946428571428573, 0.26171875, 0.84375, 0.8671875]]
+tensor<span class="o">([[</span>0.4872]]<span class="o">)</span>
+139,156,138,176,77<span class="p">;</span>124,124,221,171,225<span class="p">;</span>199,181,241,246,31<span class="p">;</span>191,114,223,73,98<span class="p">;</span>191,202,218,235,3<span class="p">;</span>86,110,194,74,151<span class="p">;</span>216,148,32,246,107<span class="p">;</span>215,185,58,247,129<span class="p">;</span>94,133,99,236,195<span class="p">;</span>166,10,185,227,183<span class="p">;</span>170,33,8,187,249<span class="p">;</span>82,8,191,54,16<span class="p">;</span>37,14,122,255,200<span class="p">;</span>97,133,236,160,126<span class="p">;</span>137,210,176,65,206<span class="p">;</span>8,200,240,204,250<span class="p">;</span>157,189,131,229,185<span class="p">;</span>148,116,251,232,215<span class="p">;</span>35,211,236,237,224<span class="p">;</span>215,155,240,162,184<span class="p">;</span>88,107,147,188,12<span class="p">;</span>222,69,102,5,239<span class="p">;</span>147,147,50,211,223<span class="p">;</span>185,28,195,187,228<span class="p">;</span>181,117,70,7,76<span class="p">;</span>144,36,56,232,3<span class="p">;</span>124,82,28,114,58<span class="p">;</span>64,61,53,249,217<span class="p">;</span>185,2,228,146,40<span class="p">;</span>182,29,67,216,222<span class="p">;</span>
+➜  attack_of_the_worm
+</code></pre></div></div>
+
+<p>Copying that block of text after the <code class="language-plaintext highlighter-rouge">tensor([[0.4872]])</code> line into the remote server gets the flag:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜  attack_of_the_worm  nc challs.umdctf.io 31774
+proof of work:
+curl <span class="nt">-sSfL</span> https://pwn.red/pow | sh <span class="nt">-s</span> s.AAAdTA<span class="o">==</span>.woGhIKLrM9b/31+n5cP/qw<span class="o">==</span>
+solution: s.Qu+qQXpy6ki9db3DxToNqWTIFglCjauiV1Ej+eEBP2nlX0bwbO5ZyIL39Pig/1oVV86BiWKTlxL9d+8b3yc1Q9uMFAnDsiof5DsQWmuMzLk7D7JTEU+BKqlDGwCicPleyLAycz/bDYL8N6pkha+eiQ+6GkT6NQjUmqv5kPFqbeiqKAr8xOTsM7Nz+IGGXMlK8SrzALv/SD2W+grgsdwD6w<span class="o">==</span>
+Enter a list of pixels to change, <span class="k">in </span>the format <span class="s1">'x,y,r,g,b;x,y,r,g,b;...'</span>:
+139,156,138,176,77<span class="p">;</span>124,124,221,171,225<span class="p">;</span>199,181,241,246,31<span class="p">;</span>191,114,223,73,98<span class="p">;</span>191,202,218,235,3<span class="p">;</span>86,110,194,74,151<span class="p">;</span>216,148,32,246,107<span class="p">;</span>215,185,58,247,129<span class="p">;</span>94,133,99,236,195<span class="p">;</span>166,10,185,227,183<span class="p">;</span>170,33,8,187,249<span class="p">;</span>82,8,191,54,16<span class="p">;</span>37,14,122,255,200<span class="p">;</span>97,133,236,160,126<span class="p">;</span>137,210,176,65,206<span class="p">;</span>8,200,240,204,250<span class="p">;</span>157,189,131,229,185<span class="p">;</span>148,116,251,232,215<span class="p">;</span>35,211,236,237,224<span class="p">;</span>215,155,240,162,184<span class="p">;</span>88,107,147,188,12<span class="p">;</span>222,69,102,5,239<span class="p">;</span>147,147,50,211,223<span class="p">;</span>185,28,195,187,228<span class="p">;</span>181,117,70,7,76<span class="p">;</span>144,36,56,232,3<span class="p">;</span>124,82,28,114,58<span class="p">;</span>64,61,53,249,217<span class="p">;</span>185,2,228,146,40<span class="p">;</span>182,29,67,216,222
+LISAN AL GAIB
+UMDCTF<span class="o">{</span>spice_harvester_destroyed_sunglasses_emoji<span class="o">}</span>
+</code></pre></div></div>
+
+<p>I really enjoyed this challenge. I will definitely build a challenge inspired by this challenge for the upcoming <a href="https://ctftime.org/event/2252/">BYUCTF</a>.</p>
+
+<p>The application of this kind of attack has plenty of applications in today’s world where every silicon valley 26 year old is throwing AI next to a random word in the English language. Scrolling through USENIX Security 2023, there are multiple papers that deal with attacking models:</p>
+<ul>
+  <li><a href="https://www.usenix.org/conference/usenixsecurity23/presentation/mink">“Security is not my field, I’m a stats guy”: A Qualitative Root Cause Analysis of Barriers to Adversarial Machine Learning Defenses in Industry</a></li>
+  <li><a href="https://www.usenix.org/conference/usenixsecurity23/presentation/lucas">Adversarial Training for Raw-Binary Malware Classifiers</a></li>
+  <li><a href="https://www.usenix.org/conference/usenixsecurity23/presentation/man">That Person Moves Like A Car: Misclassification Attack Detection for Autonomous Systems Using Spatiotemporal Consistency</a></li>
+</ul>
+
+<p>The last paper (<a href="https://www.youtube.com/watch?v=cCrHnqQFbjU&amp;t=8s&amp;ab_channel=USENIX">talk here</a>) is the most relevant to this challenge, discussing defenses against adversarial patches for self-driving cars.</p>
+
+<p>Here’s the files:</p>
+
+<p><a href="assets/files/blog/attack-of-the-worm/model.plt">model.plt</a></p>
+
+<p><a href="assets/files/blog/attack-of-the-worm/attack_worm_server.py">server.py</a></p>
+
+<p><a href="assets/files/blog/attack-of-the-worm/worm.png">worm.png</a></p>
+
+<p><a href="assets/files/blog/attack-of-the-worm/genetic_attack.py">genetic_attack.py</a></p>
+
+<p><a href="assets/files/blog/attack-of-the-worm/interpret_solve.py">interpret_solve.py</a></p>
+
+<p>Also, the challenge author under the name <code class="language-plaintext highlighter-rouge">segal</code> sent this list of resources in the CTF discord last year, I consulted a few of them:</p>
+<h2 id="resources">Resources</h2>
+<p><strong>ml resources</strong> basics of how neural networks work: <a href="https://aegeorge42.github.io/" title="https://aegeorge42.github.io/">https://aegeorge42.github.io/</a> backpropagation: <a href="https://colah.github.io/posts/2015-08-Backprop/" title="https://colah.github.io/posts/2015-08-Backprop/">https://colah.github.io/posts/2015-08-Backprop/</a> large but great guide to neural nets all the way up to transformers: <a href="https://karpathy.ai/zero-to-hero.html" title="https://karpathy.ai/zero-to-hero.html">https://karpathy.ai/zero-to-hero.html</a> more on backprop: <a href="https://neptune.ai/blog/backpropagation-algorithm-in-neural-networks-guide" title="https://neptune.ai/blog/backpropagation-algorithm-in-neural-networks-guide">https://neptune.ai/blog/backpropagation-algorithm-in-neural-networks-guide</a> gradient descent: <a href="https://towardsdatascience.com/gradient-descent-explained-9b953fc0d2c" title="https://towardsdatascience.com/gradient-descent-explained-9b953fc0d2c">https://towardsdatascience.com/gradient-descent-explained-9b953fc0d2c</a> convolutions: <a href="https://colah.github.io/posts/2014-07-Understanding-Convolutions/" title="https://colah.github.io/posts/2014-07-Understanding-Convolutions/">https://colah.github.io/posts/2014-07-Understanding-Convolutions/</a> more convolutions: <a href="https://www.youtube.com/watch?v=KuXjwB4LzSA" title="https://www.youtube.com/watch?v=KuXjwB4LzSA">https://www.youtube.com/watch?v=KuXjwB4LzSA</a> more on convolutional neural nets: <a href="https://colah.github.io/posts/2014-07-Conv-Nets-Modular/" title="https://colah.github.io/posts/2014-07-Conv-Nets-Modular/">https://colah.github.io/posts/2014-07-Conv-Nets-Modular/</a> section “Optimization in Machine Learning and Data Analytics” has good info on some loss functions (Adam, SGD, RMSProp, etc…) <a href="https://optimization.cbe.cornell.edu/index.php?title=Main_Page" title="https://optimization.cbe.cornell.edu/index.php?title=Main_Page">https://optimization.cbe.cornell.edu/index.php?title=Main_Page</a> some info on activation functions: <a href="https://towardsdatascience.com/a-comprehensive-guide-of-neural-networks-activation-functions-how-when-and-why-54d13506e4b8" title="https://towardsdatascience.com/a-comprehensive-guide-of-neural-networks-activation-functions-how-when-and-why-54d13506e4b8">https://towardsdatascience.com/a-comprehensive-guide-of-neural-networks-activation-functions-how-when-and-why-54d13506e4b8</a> practical digit identification from scratch with numpy (helps for understanding from ground up): <a href="https://towardsdatascience.com/mnist-handwritten-digits-classification-from-scratch-using-python-numpy-b08e401c4dab" title="https://towardsdatascience.com/mnist-handwritten-digits-classification-from-scratch-using-python-numpy-b08e401c4dab">https://towardsdatascience.com/mnist-handwritten-digits-classification-from-scratch-using-python-numpy-b08e401c4dab</a> intro to rnns: <a href="https://machinelearningmastery.com/an-introduction-to-recurrent-neural-networks-and-the-math-that-powers-them/" title="https://machinelearningmastery.com/an-introduction-to-recurrent-neural-networks-and-the-math-that-powers-them/">https://machinelearningmastery.com/an-introduction-to-recurrent-neural-networks-and-the-math-that-powers-them/</a> lstms: <a href="https://towardsdatascience.com/illustrated-guide-to-lstms-and-gru-s-a-step-by-step-explanation-44e9eb85bf21" title="https://towardsdatascience.com/illustrated-guide-to-lstms-and-gru-s-a-step-by-step-explanation-44e9eb85bf21">https://towardsdatascience.com/illustrated-guide-to-lstms-and-gru-s-a-step-by-step-explanation-44e9eb85bf21</a> more on rnns and lstms: <a href="https://www.turing.com/kb/comprehensive-guide-to-lstm-rnn" title="https://www.turing.com/kb/comprehensive-guide-to-lstm-rnn">https://www.turing.com/kb/comprehensive-guide-to-lstm-rnn</a> practical checklist to training neural nets: <a href="http://karpathy.github.io/2019/04/25/recipe/" title="http://karpathy.github.io/2019/04/25/recipe/">http://karpathy.github.io/2019/04/25/recipe/</a> practical course on deep learning: <a href="https://course.fast.ai/" title="https://course.fast.ai/">https://course.fast.ai/</a> some info on classical ml: <a href="https://www.akkio.com/beginners-guide-to-machine-learning" title="https://www.akkio.com/beginners-guide-to-machine-learning">https://www.akkio.com/beginners-guide-to-machine-learning</a> classical ml algorithms wiki: <a href="https://wiki.pathmind.com/machine-learning-algorithms" title="https://wiki.pathmind.com/machine-learning-algorithms">https://wiki.pathmind.com/machine-learning-algorithms</a> more classical ml: <a href="https://monkeylearn.com/blog/machine-learning-algorithms/" title="https://monkeylearn.com/blog/machine-learning-algorithms/">https://monkeylearn.com/blog/machine-learning-algorithms/</a></p>
+
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>
