@@ -92,8 +92,8 @@
 
   
   
-  (4150 Words, 
-  24 Minutes)
+  (3959 Words, 
+  22 Minutes)
   
 
 </p>
@@ -123,33 +123,23 @@
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">scapy.all</span> <span class="kn">import</span> <span class="n">rdpcap</span>
   
-<span class="c1"># Path to the PCAP file
-</span><span class="n">pcap_file</span> <span class="o">=</span> <span class="s">"exfiltrated_seg.pcap"</span>
+<span class="n">pcap_file</span> <span class="o">=</span> <span class="s">"exfiltrated_seg.pcap"</span>
   
-<span class="c1"># Read the PCAP file
-</span><span class="n">packets</span> <span class="o">=</span> <span class="n">rdpcap</span><span class="p">(</span><span class="n">pcap_file</span><span class="p">)</span>
+<span class="n">packets</span> <span class="o">=</span> <span class="n">rdpcap</span><span class="p">(</span><span class="n">pcap_file</span><span class="p">)</span>
   
 <span class="n">flag</span> <span class="o">=</span> <span class="s">""</span>
   
-<span class="c1"># Iterate over each packet
-</span><span class="k">for</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">packets</span><span class="p">:</span>
-<span class="err"> </span> <span class="err"> </span> <span class="c1"># Check if the packet is a DNS packet
-</span><span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">packet</span><span class="p">.</span><span class="n">haslayer</span><span class="p">(</span><span class="s">'DNS'</span><span class="p">):</span>
-<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># Check if the packet is a DNS query
-</span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">packet</span><span class="p">[</span><span class="s">'DNS'</span><span class="p">].</span><span class="n">qr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="err"> </span><span class="c1"># qr=0 means it's a query
+<span class="k">for</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">packets</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">packet</span><span class="p">.</span><span class="n">haslayer</span><span class="p">(</span><span class="s">'DNS'</span><span class="p">):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">packet</span><span class="p">[</span><span class="s">'DNS'</span><span class="p">].</span><span class="n">qr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="err"> </span><span class="c1"># qr=0 means it's a query
 </span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">packet</span><span class="p">[</span><span class="s">'IP'</span><span class="p">].</span><span class="n">src</span> <span class="o">==</span> <span class="s">'192.168.40.73'</span><span class="p">:</span>
-<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># Check if the DNS query is for a subdomain of data.com
-</span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">query_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">packet</span><span class="p">[</span><span class="s">'DNS'</span><span class="p">].</span><span class="n">qd</span><span class="p">.</span><span class="n">qname</span><span class="p">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">))</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">query_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">packet</span><span class="p">[</span><span class="s">'DNS'</span><span class="p">].</span><span class="n">qd</span><span class="p">.</span><span class="n">qname</span><span class="p">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">))</span>
 <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># print(query_name)
 </span>
 <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="s">'exfiltrated.com.'</span> <span class="ow">in</span> <span class="n">query_name</span><span class="p">:</span>
 <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">parts</span> <span class="o">=</span> <span class="n">query_name</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">"."</span><span class="p">)</span>
 <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">flag</span> <span class="o">+=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># Access other packet fields as needed
-</span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># For example, to qaccess the source and destination IP addresses:
-</span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># print("Source IP:", packet['IP'].src)
-</span><span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="c1"># print("Destination IP:", packet['IP'].dst)
-</span>  
+  
 <span class="k">print</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
 </code></pre></div></div>
 

