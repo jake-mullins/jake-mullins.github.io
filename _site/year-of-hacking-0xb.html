@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="html" data-theme="dark"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    
+      Week 11 - DUCTF - Sniffy
+    
+  </title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Week 11 - DUCTF - Sniffy" />
+<meta name="author" content="Jake Mullins" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="For the 3 4 people that read this and have been waiting for me next post with bated breath, I started last month as a Security Engineer Intern at Affirm, so I moved out to beautiful (and busy) San Francisco on about 2 weeks notice for the summer. Things are a little crazy, to say the least. Now that life has chilled out a bit, I should be able to get back into my routine of publishing these posts. However, life will not return any sense of normalcy until I find a cheap Mexican spot that’s open 24/7 within half a mile of my coffin apartment in SOMA neighborhood. For now, I am relying on the endurance I acquired during the great Provo Rancheritos Remodeling Riots of 2022. Musing about my lack of good nutrition aside, I am thoroughly thankful for the opportunity to be working and living here." />
+<meta property="og:description" content="For the 3 4 people that read this and have been waiting for me next post with bated breath, I started last month as a Security Engineer Intern at Affirm, so I moved out to beautiful (and busy) San Francisco on about 2 weeks notice for the summer. Things are a little crazy, to say the least. Now that life has chilled out a bit, I should be able to get back into my routine of publishing these posts. However, life will not return any sense of normalcy until I find a cheap Mexican spot that’s open 24/7 within half a mile of my coffin apartment in SOMA neighborhood. For now, I am relying on the endurance I acquired during the great Provo Rancheritos Remodeling Riots of 2022. Musing about my lack of good nutrition aside, I am thoroughly thankful for the opportunity to be working and living here." />
+<link rel="canonical" href="http://localhost:4000/year-of-hacking-0xb" />
+<meta property="og:url" content="http://localhost:4000/year-of-hacking-0xb" />
+<meta property="og:site_name" content="Jake Mullins" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-07-09T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Week 11 - DUCTF - Sniffy" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Jake Mullins"},"dateModified":"2024-07-09T00:00:00-06:00","datePublished":"2024-07-09T00:00:00-06:00","description":"For the 3 4 people that read this and have been waiting for me next post with bated breath, I started last month as a Security Engineer Intern at Affirm, so I moved out to beautiful (and busy) San Francisco on about 2 weeks notice for the summer. Things are a little crazy, to say the least. Now that life has chilled out a bit, I should be able to get back into my routine of publishing these posts. However, life will not return any sense of normalcy until I find a cheap Mexican spot that’s open 24/7 within half a mile of my coffin apartment in SOMA neighborhood. For now, I am relying on the endurance I acquired during the great Provo Rancheritos Remodeling Riots of 2022. Musing about my lack of good nutrition aside, I am thoroughly thankful for the opportunity to be working and living here.","headline":"Week 11 - DUCTF - Sniffy","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/year-of-hacking-0xb"},"url":"http://localhost:4000/year-of-hacking-0xb"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Jake Mullins" />
+
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/assets/images/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#00aba9">
+  <meta name="msapplication-config" content="/assets/images/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- Favicon -->
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  
+    <script type="text/javascript">
+  window.addEventListener('load', themeChange);
+  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  if (currentTheme)
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function themeChange() {
+    let button = document.querySelector('.theme-toggle');
+
+    button.addEventListener('click', function (e) {
+      let currentTheme = document.documentElement.getAttribute('data-theme');
+      if (currentTheme === 'dark') {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        transition();
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+
+    let transition = () => {
+      document.documentElement.classList.add('transition');
+      window.setTimeout(() => {
+        document.documentElement.classList.remove('transition');
+      }, 1000);
+    }
+  }
+</script>
+
+
+  
+</head>
+<body>
+    <main class="page-content" aria-label="Content">
+      <div class="w">
+        <a href="/">home...</a>
+<h1 class="post-title">Week 11 - DUCTF - Sniffy</h1>
+<p class="post-date text-bold">
+  
+  
+    <span class="text-upcase">July 2024</span>
+  
+
+
+  
+  
+  (1244 Words, 
+  7 Minutes)
+  
+
+</p>
+
+
+  <div class="">
+    
+    <span class="tag">year-of-hacking</span>
+    
+    <span class="tag">python</span>
+    
+  </div>
+
+
+<p>For the <del>3</del> 4 people that read this and have been waiting for me next post with bated breath, I started last month as a Security Engineer Intern at Affirm, so I moved out to beautiful (and busy) San Francisco on about 2 weeks notice for the summer. Things are a little crazy, to say the least. Now that life has chilled out a bit, I should be able to get back into my routine of publishing these posts. However, life will not return any sense of normalcy until I find a cheap Mexican spot that’s open 24/7 within half a mile of my coffin apartment in SOMA neighborhood. For now, I am relying on the endurance I acquired during the great <a href="https://www.instagram.com/provorancheritos/p/CjRGJPKOtNI/?locale=de-DE&amp;img_index=1">Provo Rancheritos Remodeling Riots of 2022</a>. Musing about my lack of good nutrition aside, I am thoroughly thankful for the opportunity to be working and living here.</p>
+
+<p>This weekend, I participated in the very good Down Under CTF under BYU Cyberia. After this CTF, even though we finished in 95th, we are now 16th in the country! We’ve been working hard, and I’m very happy to see our efforts be rewarded. I didn’t solve any challenges, but in my attempts, I did learn a lot. Here’s my post-CTF writeup of <em>Sniffy</em>. I was actually on the correct track, but I missed a few key details.</p>
+
+<h2 id="sniffy">Sniffy</h2>
+<p>We get a nice little website of kookaburra sounds, where we can switch themes on the top right:
+<img src="assets/images/blog/week11/sniffy-main-page.png" alt="assets/images/blog/week11/sniffy-main-page.png" /></p>
+
+<p>We also get a file download for the website with a <code class="language-plaintext highlighter-rouge">Dockerfile</code>. It looks like this is a php application running from the <code class="language-plaintext highlighter-rouge">php:8.3-apache</code> base image. We also get some php logic in the <code class="language-plaintext highlighter-rouge">index.php</code>:</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>  
+  
+<span class="k">include</span> <span class="s1">'flag.php'</span><span class="p">;</span>  
+  
+<span class="k">function</span> <span class="n">theme</span><span class="p">()</span> <span class="p">{</span>  
+<span class="err">   </span><span class="k">return</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"dark"</span> <span class="o">?</span> <span class="s2">"dark"</span> <span class="o">:</span> <span class="s2">"light"</span><span class="p">;</span>  
+<span class="p">}</span>  
+  
+<span class="k">function</span> <span class="n">other_theme</span><span class="p">()</span> <span class="p">{</span>  
+<span class="err">   </span><span class="k">return</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"dark"</span> <span class="o">?</span> <span class="s2">"light"</span> <span class="o">:</span> <span class="s2">"dark"</span><span class="p">;</span>  
+<span class="p">}</span>  
+  
+<span class="nb">session_start</span><span class="p">();</span>  
+  
+<span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'flag'</span><span class="p">]</span> <span class="o">=</span> <span class="no">FLAG</span><span class="p">;</span> <span class="cm">/* Flag is in the session here! */</span>  
+<span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">??</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">'light'</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Here, it loads the flag into the <code class="language-plaintext highlighter-rouge">$_SESSION</code> variable. <code class="language-plaintext highlighter-rouge">$_SESSION</code> is a global variable used by an individual user with a session. We also get a file called <code class="language-plaintext highlighter-rouge">audio.php</code></p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>  
+  
+<span class="nv">$file</span> <span class="o">=</span> <span class="s1">'audio/'</span> <span class="mf">.</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'f'</span><span class="p">];</span>  
+  
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">file_exists</span><span class="p">(</span><span class="nv">$file</span><span class="p">))</span> <span class="p">{</span>  
+<span class="err">       </span><span class="nb">http_response_code</span><span class="p">(</span><span class="mi">404</span><span class="p">);</span> <span class="k">die</span><span class="p">;</span>  
+<span class="p">}</span>  
+  
+<span class="nv">$mime</span> <span class="o">=</span> <span class="nb">mime_content_type</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>  
+  
+<span class="nb">error_log</span><span class="p">(</span><span class="nb">print_r</span><span class="p">(</span><span class="nv">$mime</span><span class="p">,</span> <span class="kc">TRUE</span><span class="p">));</span>  
+  
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$mime</span> <span class="o">||</span> <span class="o">!</span><span class="nf">str_starts_with</span><span class="p">(</span><span class="nv">$mime</span><span class="p">,</span> <span class="s1">'audio'</span><span class="p">))</span> <span class="p">{</span>  
+<span class="err">       </span><span class="nb">http_response_code</span><span class="p">(</span><span class="mi">403</span><span class="p">);</span> <span class="k">die</span><span class="p">;</span>  
+<span class="p">}</span>  
+  
+<span class="nb">header</span><span class="p">(</span><span class="s2">"Content-Type: </span><span class="nv">$mime</span><span class="s2">"</span><span class="p">);</span>  
+<span class="nb">readfile</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>There’s a pretty obvious Local File Inclusion and Path Traversal vulnerability. It looks like we can include almost any file on the container’s file system using the <code class="language-plaintext highlighter-rouge">f=</code> argument, but it checks the result of <code class="language-plaintext highlighter-rouge">mime_content_type</code> to see if it’s some kind of <code class="language-plaintext highlighter-rouge">audio</code> type. Doing some digging, it looks like this function pulls from configuration defined in <code class="language-plaintext highlighter-rouge">/etc/magic.mime</code> and <code class="language-plaintext highlighter-rouge">/etc/magic</code>. However, it doesn’t look like my files don’t contain any configuration. I spun my wheels a little bit, until I realized that this was all being run from the an Apache container. I started up the container by running:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run <span class="nt">--name</span> sniffy <span class="nt">-it</span> p 8080:80 sniffy 
+</code></pre></div></div>
+
+<p>Then in a different tmux window, I ran:</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker <span class="nb">exec</span> <span class="nt">-it</span> sniffy /bin/bash
+</code></pre></div></div>
+
+<p>Digging around in documentation, I found that Apache consults <code class="language-plaintext highlighter-rouge">/etc/apache/magic</code> when deciding a MIME type. I also <em>think</em> that the <code class="language-plaintext highlighter-rouge">file</code> command consults this file. I found it in the running container, and I pulled that down to my host OS with:</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker <span class="nb">cp </span>sniffy:/etc/apache/magic <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>In these config files, you can list a starting byte and a byte pattern to match. I’m sure you can do some more complex stuff but here it’s basically “Is there these bytes? Then it’s these data types.” On line 51, <code class="language-plaintext highlighter-rouge">/etc/magic/mime</code> declares that if the bytes 1080-1083 are <code class="language-plaintext highlighter-rouge">M.K.</code>, the file will be defined <code class="language-plaintext highlighter-rouge">audio/x-mod</code>:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1080    string  M.K.            audio/x-mod
+</code></pre></div></div>
+
+<p>How does this help us? Well, here’s where I failed to recognize during the CTF that every session that is managed by a PHP runtime is actually a plaintext file under <code class="language-plaintext highlighter-rouge">/tmp/sess_&lt;PHPSESSID&gt;</code>. Where <code class="language-plaintext highlighter-rouge">&lt;PHPSESSID&gt;</code> is the cookie assigned by PHP for your session. Let’s test this out by visiting the web page and getting a session cookie:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PHPSESSID: p7n6b4g9vk20b2kh0cm5u87v0u
+</code></pre></div></div>
+
+<p>We can now enter the docker container with (assuming the container is still running):</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker <span class="nb">exec</span> <span class="nt">-it</span> /bin/bash sniffy
+</code></pre></div></div>
+
+<p>And catting out that file:</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@baaa20612aq35:/tmp<span class="nv">$ </span><span class="nb">cat </span>sess_p7n6b4g9vk20b2kh0cm5u87v0u
+flag|s:7:<span class="s2">"DUCTF{}"</span><span class="p">;</span>theme|s:5:<span class="s2">"light"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Now, looking at line 16 in <code class="language-plaintext highlighter-rouge">index.php</code>, we can see that we have complete control over the value of <code class="language-plaintext highlighter-rouge">$_SESSION['theme']</code>:</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">??</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'theme'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">'light'</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>This line of code will set <code class="language-plaintext highlighter-rouge">$_SESSION['theme']</code> to the value of the <code class="language-plaintext highlighter-rouge">theme</code> argument, if it’s present.</p>
+
+<p>We can test this out by visiting <code class="language-plaintext highlighter-rouge">localhost:8080/index.php?theme=asdfasdfasdf</code> in the browser. Then we cat out the session file in the container:</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@baaa20612aq35:/tmp<span class="nv">$ </span><span class="nb">cat </span>sess_p7n6b4g9vk20b2kh0cm5u87v0u
+flag|s:7:<span class="s2">"DUCTF{}"</span><span class="p">;</span>theme|s:12:<span class="s2">"asdfasdfadsf"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Looks like we’re able to write arbitrary values to our session file. We now have a pretty straightforward process for constructing a payload:</p>
+<ol>
+  <li>Find a sequence of characters that will make the <code class="language-plaintext highlighter-rouge">mime_content_type</code> call in <code class="language-plaintext highlighter-rouge">audio.php</code> think that the content that it is evaluating is some kind of audio type.</li>
+  <li>Set a user’s <code class="language-plaintext highlighter-rouge">$_SESSION['theme']</code> to that sequence of characters.</li>
+  <li>Visit <code class="language-plaintext highlighter-rouge">audio.php</code> and load the session file for that user, which will expose the flag!</li>
+</ol>
+
+<p>For the sequence of characters, let’s choose the requirement that <code class="language-plaintext highlighter-rouge">M.K.</code> be in bytes 1080-1083, tricking the <code class="language-plaintext highlighter-rouge">mime_content_type</code> call into thinking that the session file is actually an <code class="language-plaintext highlighter-rouge">audio/x-mod</code> file. Let’s do a quick and dirty python script to generate all 4 possible payloads:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+	<span class="n">payload</span> <span class="o">=</span> <span class="s">'a'</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="s">'M.K.'</span> <span class="o">*</span> <span class="mh">0x400</span>
+	<span class="k">print</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+	<span class="k">print</span><span class="p">(</span><span class="s">'-'</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Visiting <code class="language-plaintext highlighter-rouge">https://web-sniffy-d9920bbcf9df.2024.ductf.dev/index.php?theme=M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K....</code> will set the cookie. Now, looking at our cookie, we know what our session cookie is, and thus the path to our session file: <code class="language-plaintext highlighter-rouge">PHPSESSID: 03du87nmd49q40acbknvvc0prr</code>. Trying to visit <code class="language-plaintext highlighter-rouge">https://web-sniffy-d9920bbcf9df.2024.ductf.dev/audio.php?f=../../../../tmp/sess_03du87nmd49q40acbknvvc0prr</code> returns a 403, which means that this payload didn’t work. Let’s try the second payload, where the repeating <code class="language-plaintext highlighter-rouge">M.K.</code> is offset by one character. Success! It looks like it downloaded as an audio file too. Catting it out shows the (uniquely Australian) flag!</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>flag|s:52:"DUCTF{koo-koo-koo-koo-koo-ka-ka-ka-ka-kaw-kaw-kaw!!}";theme|s:4097:"aM.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K.M.K....
+</code></pre></div></div>
+
+<p>I’m disappointed I wasn’t able to crack this challenge, but I’m very impressed with the final payload, and congratulate those who beat this challenge. The upshot is I’ve finally finally finally learned how to use containers. I never bothered to wade through the sea of terminology until now.</p>
+
+<h3 id="music-from-this-week-month">Music from this <del>week</del> month</h3>
+<p><a href="https://open.spotify.com/track/2f9XA7pBMjrHPO2cJW5XCu?si=9e65d8fd5d494392">Llorar</a> - Los Socios Del Ritmo
+<a href="https://open.spotify.com/track/3Iw4UVS7fo2TdD6Spmgqaj?si=edcd4b9d4f9c4f67">Mentirosa</a> - Rafaga
+<a href="https://open.spotify.com/track/43q0J3OPQvNq2UPU2Enu9X?si=4423e348fe474feb">El Chico Del Apartamento 512</a> - Selena
+<a href="https://open.spotify.com/track/1BwrMGGhPA6GarWIYaFrW8?si=27f5cef6428b4e3e">La Vida es Un Carnaval</a> - Celia Cruz
+<a href="https://open.spotify.com/track/3tkXg3freIdvTxN58YUPaG?si=2eeeb7326bd5409c">Sleep Is For the Weak</a> - The Dreadnoughts
+<a href="https://open.spotify.com/track/5XeSAezNDk9tuw3viiCbZ3?si=c5a575b494774eea">Get Up Offa That Thing</a>- James Brown
+<a href="https://open.spotify.com/track/59kHPbwyyCApYA8RQQEuXm?si=2fdfebc543534845">Chattahoochee</a> - Alan Jackson</p>
+
+
+        
+          <button title="Toggle Theme" class="theme-toggle">
+  <svg viewBox="0 0 32 32" width="24" height="24" fill="currentcolor">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="currentcolor" stroke-width="4"></circle>
+    <path d="
+             M 16 0
+             A 16 16 0 0 0 16 32
+             z">
+    </path>
+  </svg>
+</button>
+
+        
+        <div class="credits">&copy;&nbsp;2024&nbsp;Jake Mullins
+          &nbsp;
+          •
+          &nbsp;Theme&nbsp; <a href="https://github.com/abhinavs/moonwalk" target="_blank" rel="noreferrer">Moonwalk</a>
+        </div>
+      </div>
+    </main></body>
+</html>
