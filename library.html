@@ -1,0 +1,120 @@
+<html lang=en class="decnjcsxa idc0_350 dheiiaoprq">
+
+<head>
+    <meta charset=utf-8>
+    <title>Jake Mullins</title>
+    <meta name=viewport content="width=device-width,initial-scale=1">
+    <link rel="shortcut icon" href=/static/favicon.ico>
+    <link rel=preconnect href=https://fonts.googleapis.com>
+    <link rel=preconnect href=https://fonts.gstatic.com crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&display=swap" rel=stylesheet>
+    <link rel=stylesheet href=/style.css>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script>MathJax.Hub.Config({ tex2jax: { inlineMath: [["$", "$"], ["\\(", "\\)"]], displayMath: [["$$", "$$"], ["\\[", "\\]"]] } }), MathJax.Hub.Queue(["Typeset", MathJax.Hub])</script>
+</head>
+
+<body>
+    <nav class=top-nav><span class=site-title><img src=/zeliij.jpg alt="Zeliij" class=header-motif><a
+                href=/ class=header-link>Jake Mullins</a></span><span class=nav-links><a href=/blogs>Blog</a><a
+                href=/library>Library</a><a href=https://www.linkedin.com/in/jake-mullins-710160206>Linkedin</a></span></nav>
+    <main id=library></main>
+    <hr>
+    <footer>
+        <!--Idgaf about copyright rn dude-->
+    </footer>
+    <script>
+        // library.md drives this page:
+        //   # Genre   -> <h2> plus the bordered <section>
+        //   ## Year   -> <h3> with a slug id, so /library#2025 links work
+        //   - Item    -> list item, with [text](url) and *italics* honored
+        (function () {
+            var mount = document.getElementById('library');
+
+            function slug(text) {
+                return text.toLowerCase().replace(/[^a-z0-9 -]/g, '').trim().replace(/ /g, '-');
+            }
+
+            function inline(text, parent) {
+                // Walk the raw text, appending plain runs as text nodes so markup
+                // in the source is never interpreted as HTML.
+                var pattern = /\[([^\]]+)\]\(([^)\s]+)\)|\*([^*]+)\*/g;
+                var last = 0, match;
+                while ((match = pattern.exec(text)) !== null) {
+                    if (match.index > last) {
+                        parent.appendChild(document.createTextNode(text.slice(last, match.index)));
+                    }
+                    if (match[1]) {
+                        var a = document.createElement('a');
+                        a.href = match[2];
+                        a.textContent = match[1];
+                        parent.appendChild(a);
+                    } else {
+                        var i = document.createElement('i');
+                        i.textContent = match[3];
+                        parent.appendChild(i);
+                    }
+                    last = pattern.lastIndex;
+                }
+                parent.appendChild(document.createTextNode(text.slice(last)));
+                return parent;
+            }
+
+            function render(markdown) {
+                var frag = document.createDocumentFragment();
+                var section = null, list = null;
+                markdown.split('\n').forEach(function (raw) {
+                    var line = raw.trim();
+                    if (!line) return;
+                    if (line.indexOf('# ') === 0) {
+                        frag.appendChild(inline(line.slice(2).trim(), document.createElement('h2')));
+                        section = document.createElement('section');
+                        frag.appendChild(section);
+                        list = null;
+                    } else if (line.indexOf('## ') === 0) {
+                        var title = line.slice(3).trim();
+                        if (!section) {
+                            section = document.createElement('section');
+                            frag.appendChild(section);
+                        }
+                        var h3 = inline(title, document.createElement('h3'));
+                        h3.id = slug(title);
+                        section.appendChild(h3);
+                        list = null;
+                    } else if (line.indexOf('- ') === 0) {
+                        if (!section) {
+                            section = document.createElement('section');
+                            frag.appendChild(section);
+                        }
+                        if (!list) {
+                            list = document.createElement('ul');
+                            section.appendChild(list);
+                        }
+                        list.appendChild(inline(line.slice(2).trim(), document.createElement('li')));
+                    } else {
+                        var p = inline(line, document.createElement('p'));
+                        (section || frag).appendChild(p);
+                        list = null;
+                    }
+                });
+                return frag;
+            }
+
+            fetch('/library.md', { cache: 'no-cache' }).then(function (response) {
+                if (!response.ok) throw new Error(response.status + ' ' + response.statusText);
+                return response.text();
+            }).then(function (markdown) {
+                mount.appendChild(render(markdown));
+                // Anchors only exist now, so honor a #year in the incoming URL.
+                if (location.hash) {
+                    var target = document.getElementById(location.hash.slice(1));
+                    if (target) target.scrollIntoView();
+                }
+            }).catch(function (error) {
+                mount.appendChild(inline('The library could not be loaded (' + error.message + ').',
+                    document.createElement('p')));
+            });
+        })();
+    </script>
+</body>
+
+</html>
