@@ -5,6 +5,7 @@
 - America and Iran: A History, 1720 to the Present, John Ghazvinian
 - Iran's Grand Strategy: A Political History, Vali Nasr
 - Persepolis, Marjane Satrapi
+- A Savage War of Peace: Algeria 1954-1962, Alistair Horne
 
 ## Classics
 - The Landmark Thucydides, Robert B. Strassler
