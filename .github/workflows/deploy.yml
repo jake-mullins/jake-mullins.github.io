@@ -21,12 +21,12 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ARN }}
+          role-to-assume: "${{ vars.AWS_DEPLOY_ROLE_ARN }}"
           aws-region: us-east-1
 
       - name: Sync to S3
         run: |
-          aws s3 sync . "s3://${{ var.S3_BUCKET }}" --delete --exclude ".*" --exclude "*/.*"
+          aws s3 sync . "s3://${{ vars.SITE_CONTENTS_S3_BUCKET }}" --delete --exclude ".*" --exclude "*/.*"
 
       - name: Invalidate Cloudfront
         run: |
