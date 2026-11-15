@@ -6,6 +6,7 @@
 - Iran's Grand Strategy: A Political History, Vali Nasr
 - Persepolis, Marjane Satrapi
 - A Savage War of Peace: Algeria 1954-1962, Alistair Horne
+- The Fall of the Ottomans: The Great War in the Middle East
 
 ## Classics
 - The Landmark Thucydides, Robert B. Strassler
@@ -37,7 +38,7 @@
 - Notes from Underground, Fyodr Dostoevsky transl. by Pevear and Volokhonsky
 - Tusks of Extinction, Ray Nayler
 - Numero Zero, Umberto Eco
-- The Name of the Rose, Umberto Eco
+- The Mountain in the Sea, Ray Nayler
 
 ## 2025
 - Dune + Dune Messiah, Frank Herbert
