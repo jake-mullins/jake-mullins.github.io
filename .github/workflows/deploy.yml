@@ -1,0 +1,35 @@
+name: Deploy to S3
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write     # Required for OIDC
+  contents: read
+
+concurrency:
+  group: deploy-s3
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync . "s3://${{ var.S3_BUCKET }}" --delete --exclude ".*" --exclude "*/.*"
+
+      - name: Invalidate Cloudfront
+        run: |
+          aws cloudfront create-invalidation \
+          --distribution-id "${{ vars.CF_DISTRIBUTION_ID }}" \
+          --paths '/*'
